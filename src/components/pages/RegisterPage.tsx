@@ -152,7 +152,7 @@ export default function RegisterPage() {
             style={{
               width: 48,
               height: 48,
-              background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+              background: 'linear-gradient(135deg, #0F5EFF, #38BDF8)',
             }}
           >
             <span style={{ fontSize: 24 }}>⚡</span>

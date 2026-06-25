@@ -343,8 +343,8 @@ export default function TradingPage() {
             <AreaChart data={priceData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#0F5EFF" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#0F5EFF" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(42, 48, 65, 0.4)" />
@@ -366,7 +366,7 @@ export default function TradingPage() {
               <Area
                 type="monotone"
                 dataKey="price"
-                stroke="#3b82f6"
+                stroke="#0F5EFF"
                 strokeWidth={2}
                 fill="url(#priceGradient)"
                 isAnimationActive={false}
@@ -394,7 +394,7 @@ export default function TradingPage() {
                 formatter={(value: any) => [`${value} BTC`, 'Volume']}
                 labelFormatter={(label: any) => String(label)}
               />
-              <Bar dataKey="volume" fill="#3b82f6" opacity={0.4} radius={[2, 2, 0, 0]} isAnimationActive={false} />
+              <Bar dataKey="volume" fill="#0F5EFF" opacity={0.4} radius={[2, 2, 0, 0]} isAnimationActive={false} />
             </BarChart>
           </ResponsiveContainer>
         </div>

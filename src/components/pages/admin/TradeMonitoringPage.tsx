@@ -109,7 +109,7 @@ export default function TradeMonitoringPage() {
   const endIdx = Math.min(page * limit, total);
 
   const statCards = [
-    { label: 'Total Trades', value: stats.totalTrades.toLocaleString(), icon: BarChart3, color: '#3b82f6' },
+    { label: 'Total Trades', value: stats.totalTrades.toLocaleString(), icon: BarChart3, color: '#0F5EFF' },
     { label: 'Open Positions', value: stats.openPositions.toLocaleString(), icon: Activity, color: '#22c55e' },
     { label: "Today's Volume", value: `$${stats.todayVolume.toLocaleString()}`, icon: TrendingUp, color: '#f59e0b' },
     { label: 'Total PnL', value: `$${stats.totalPnl.toLocaleString()}`, icon: DollarSign, color: stats.totalPnl >= 0 ? '#22c55e' : '#ef4444' },

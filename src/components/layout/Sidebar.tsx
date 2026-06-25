@@ -23,6 +23,7 @@ import {
   FileText,
   Ticket,
 } from 'lucide-react';
+import Image from 'next/image';
 import { useStore, Pages, type PageType } from '@/store/useStore';
 
 interface NavItem {
@@ -85,19 +86,15 @@ export default function Sidebar() {
       {/* Logo */}
       <div
         className="flex items-center gap-3 px-4 py-5 border-b"
-        style={{ borderColor: 'var(--border-color)' }}
+        style={{ borderColor: 'rgba(192, 199, 209, 0.1)' }}
       >
-        <div
-          className="flex items-center justify-center rounded-lg"
-          style={{
-            width: 36,
-            height: 36,
-            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-            flexShrink: 0,
-          }}
-        >
-          <span style={{ fontSize: 18 }}>⚡</span>
-        </div>
+        <Image
+          src="/logo.png"
+          alt="NexTrade Pro"
+          width={36}
+          height={36}
+          style={{ borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
+        />
         <AnimatePresence>
           {sidebarOpen && (
             <motion.div
@@ -107,8 +104,8 @@ export default function Sidebar() {
               transition={{ duration: 0.2 }}
               style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}
             >
-              <span className="gradient-text" style={{ fontSize: 18, fontWeight: 700 }}>
-                NexTrade Pro
+              <span style={{ fontSize: 18, fontWeight: 700, color: '#FFFFFF', fontFamily: "var(--font-poppins), 'Poppins', sans-serif" }}>
+                NexTrade <span style={{ color: '#FFD700' }}>Pro</span>
               </span>
             </motion.div>
           )}

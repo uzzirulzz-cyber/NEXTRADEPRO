@@ -100,7 +100,7 @@ export default function LoginPage() {
             style={{
               width: 56,
               height: 56,
-              background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+              background: 'linear-gradient(135deg, #0F5EFF, #38BDF8)',
             }}
           >
             <span style={{ fontSize: 28 }}>⚡</span>

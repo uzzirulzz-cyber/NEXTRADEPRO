@@ -179,7 +179,7 @@ export default function Header() {
               style={{
                 width: 32,
                 height: 32,
-                background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                background: 'linear-gradient(135deg, #0F5EFF, #38BDF8)',
                 fontSize: 13,
                 flexShrink: 0,
               }}

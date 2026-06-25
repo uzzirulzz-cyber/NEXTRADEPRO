@@ -22,27 +22,29 @@ import {
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
-/* ─── FunderPro-Inspired Color Palette ─── */
+/* ─── NexTrade Pro Theme: Blue / Silver / White / Gold ─── */
 const C = {
-  bgDarkest: '#060b18',
-  bgDark: '#0c1120',
-  bgBase: '#0f1527',
-  bgCard: '#1e2742',
-  bgCardHover: '#253352',
-  bgSubtle: '#162036',
-  border: 'rgba(79, 187, 227, 0.12)',
-  borderHover: 'rgba(79, 187, 227, 0.25)',
-  accent: '#4FBBE3',
-  accentDark: '#0f84d7',
-  accentBlue: '#0095f7',
-  ctaRed: '#d61f33',
-  ctaRedHover: '#ff273e',
-  ctaRedGlow: 'rgba(214, 31, 51, 0.35)',
-  textPrimary: '#f0f1f7',
-  textSecondary: '#9196b6',
-  textMuted: '#6e7895',
+  bgDarkest: '#060F23',
+  bgDark: '#081B3A',
+  bgBase: '#0B1F3F',
+  bgCard: 'rgba(14, 34, 72, 0.5)',
+  bgCardHover: 'rgba(15, 95, 255, 0.08)',
+  bgSubtle: 'rgba(8, 27, 58, 0.8)',
+  border: 'rgba(192, 199, 209, 0.12)',
+  borderHover: 'rgba(192, 199, 209, 0.25)',
+  accent: '#0F5EFF',
+  accentDark: '#0D4FD4',
+  accentBlue: '#38BDF8',
+  ctaRed: '#0F5EFF',
+  ctaRedHover: '#38BDF8',
+  ctaRedGlow: 'rgba(15, 95, 255, 0.35)',
+  textPrimary: '#FFFFFF',
+  textSecondary: '#C0C7D1',
+  textMuted: '#7A8599',
   green: '#22c55e',
-  red: '#ef4444',
+  red: '#FF4757',
+  gold: '#FFD700',
+  silver: '#C0C7D1',
 };
 
 /* ─── Data ─── */
@@ -192,7 +194,7 @@ export default function HomePage() {
         <div className="flex items-center gap-3">
           <Image src="/logo.png" alt="NexTrade Pro" width={38} height={38} />
           <span className="text-xl font-bold hidden sm:block" style={{ color: C.textPrimary }}>
-            NexTrade Pro
+            NexTrade <span style={{ color: C.gold }}>Pro</span>
           </span>
         </div>
         <div className="flex items-center gap-3">
@@ -229,7 +231,7 @@ export default function HomePage() {
               top: -200,
               left: '50%',
               transform: 'translateX(-50%)',
-              background: 'radial-gradient(circle, rgba(79,187,227,0.08) 0%, transparent 65%)',
+              background: 'radial-gradient(circle, rgba(15,95,255,0.1) 0%, transparent 65%)',
             }}
           />
         </div>
@@ -245,12 +247,12 @@ export default function HomePage() {
             <span
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold"
               style={{
-                background: 'rgba(79, 187, 227, 0.1)',
-                border: `1px solid ${C.border}`,
-                color: C.accent,
+                background: 'rgba(255, 215, 0, 0.1)',
+                border: '1px solid rgba(255, 215, 0, 0.25)',
+                color: C.gold,
               }}
             >
-              <Star size={13} fill={C.accent} />
+              <Star size={13} fill={C.gold} />
               The Original Trading Firm with Daily Rewards
             </span>
           </motion.div>

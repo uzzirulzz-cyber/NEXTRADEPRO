@@ -80,7 +80,7 @@ export default function AgentManagementPage() {
   }, [fetchAgents]);
 
   const statCards = [
-    { label: 'Total Agents', value: stats.total, icon: Users, color: '#3b82f6' },
+    { label: 'Total Agents', value: stats.total, icon: Users, color: '#0F5EFF' },
     { label: 'Active Agents', value: stats.active, icon: UserCheck, color: '#22c55e' },
     { label: 'Users Under Agents', value: stats.usersUnderAgents, icon: UsersRound, color: '#f59e0b' },
     { label: 'Total Revenue', value: `$${stats.totalRevenue.toLocaleString()}`, icon: DollarSign, color: '#8b5cf6' },

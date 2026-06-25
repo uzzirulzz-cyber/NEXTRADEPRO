@@ -18,7 +18,7 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' as const } },
 };
 
-const COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'];
+const COLORS = ['#0F5EFF', '#22c55e', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'];
 
 function generateMockRevenueData() {
   const data = [];
@@ -126,7 +126,7 @@ export default function RevenueAnalyticsPage() {
 
   const statCards = [
     { label: 'Total Revenue', value: `$${(stats.totalRevenue || totalRevenueNum).toLocaleString()}`, icon: DollarSign, color: '#22c55e' },
-    { label: 'Monthly Revenue', value: `$${stats.monthlyRevenue.toLocaleString()}`, icon: TrendingUp, color: '#3b82f6' },
+    { label: 'Monthly Revenue', value: `$${stats.monthlyRevenue.toLocaleString()}`, icon: TrendingUp, color: '#0F5EFF' },
     { label: 'Daily Avg', value: `$${stats.dailyAvg.toLocaleString()}`, icon: Calendar, color: '#f59e0b' },
     { label: 'Growth Rate', value: `${stats.growthRate >= 0 ? '+' : ''}${stats.growthRate}%`, icon: ArrowUpRight, color: stats.growthRate >= 0 ? '#22c55e' : '#ef4444' },
   ];

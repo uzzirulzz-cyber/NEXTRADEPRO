@@ -111,7 +111,7 @@ export default function DashboardPage() {
   const quickActions = [
     { label: 'Deposit', icon: ArrowUpRight, color: '#22c55e', page: Pages.DEPOSIT },
     { label: 'Withdraw', icon: ArrowDownRight, color: '#ef4444', page: Pages.WITHDRAW },
-    { label: 'Trade', icon: Zap, color: '#3b82f6', page: Pages.TRADING },
+    { label: 'Trade', icon: Zap, color: '#0F5EFF', page: Pages.TRADING },
     { label: 'Invite', icon: Users, color: '#f59e0b', page: Pages.REFERRAL },
   ];
 
@@ -192,7 +192,7 @@ export default function DashboardPage() {
                 background: 'rgba(59, 130, 246, 0.15)',
               }}
             >
-              <Activity size={20} style={{ color: '#3b82f6' }} />
+              <Activity size={20} style={{ color: '#0F5EFF' }} />
             </div>
           </div>
           <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
@@ -243,8 +243,8 @@ export default function DashboardPage() {
               <AreaChart data={portfolioData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="portfolioGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#0F5EFF" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#0F5EFF" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <XAxis
@@ -265,7 +265,7 @@ export default function DashboardPage() {
                 <Area
                   type="monotone"
                   dataKey="value"
-                  stroke="#3b82f6"
+                  stroke="#0F5EFF"
                   strokeWidth={2}
                   fill="url(#portfolioGradient)"
                   isAnimationActive={false}
