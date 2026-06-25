@@ -50,7 +50,7 @@ export default function MobileTopBar() {
         left: 0,
         right: 0,
         height: 54,
-        background: 'rgba(8, 27, 58, 0.92)',
+        background: 'rgba(10, 15, 26, 0.92)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
         borderBottom: '1px solid rgba(192, 199, 209, 0.1)',
@@ -83,7 +83,7 @@ export default function MobileTopBar() {
 
         <div ref={menuRef} style={{ position: 'relative' }}>
           <button onClick={() => setMenuOpen(!menuOpen)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-            <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(15, 95, 255, 0.1)', border: '1px solid rgba(15, 95, 255, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: '#38BDF8' }}>
+            <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(229, 57, 53, 0.1)', border: '1px solid rgba(229, 57, 53, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: '#FFD700' }}>
               {user?.name?.charAt(0)?.toUpperCase() || 'U'}
             </div>
           </button>
@@ -92,7 +92,7 @@ export default function MobileTopBar() {
             <div style={{
               position: 'absolute', top: '100%', right: 0, marginTop: 8, minWidth: 200,
               background: '#0E2248', border: '1px solid rgba(192, 199, 209, 0.15)',
-              borderRadius: 14, padding: '6px 0', boxShadow: '0 12px 48px rgba(0,0,0,0.5), 0 0 20px rgba(15,95,255,0.08)', zIndex: 200,
+              borderRadius: 14, padding: '6px 0', boxShadow: '0 12px 48px rgba(0,0,0,0.5), 0 0 20px rgba(229,57,53,0.08)', zIndex: 200,
             }}>
               <div style={{ padding: '12px 14px', borderBottom: '1px solid rgba(192,199,209,0.1)' }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#FFFFFF', fontFamily: "var(--font-poppins), 'Poppins', sans-serif" }}>{user?.name || 'User'}</div>

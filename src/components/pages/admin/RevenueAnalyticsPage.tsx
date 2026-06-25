@@ -18,7 +18,7 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' as const } },
 };
 
-const COLORS = ['#0F5EFF', '#22c55e', '#f59e0b', '#8b5cf6', '#FF4757', '#06b6d4'];
+const COLORS = ['#E53935', '#22c55e', '#f59e0b', '#8b5cf6', '#FF4757', '#06b6d4'];
 
 function generateMockRevenueData() {
   const data = [];
@@ -56,7 +56,7 @@ function generateMockPairData() {
 function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name?: string; color?: string }>; label?: string }) {
   if (active && payload && payload.length) {
     return (
-      <div style={{ background: 'rgba(8, 27, 58, 0.95)', border: '1px solid var(--border-color)', borderRadius: 8, padding: '10px 14px' }}>
+      <div style={{ background: 'rgba(10, 15, 26, 0.95)', border: '1px solid var(--border-color)', borderRadius: 8, padding: '10px 14px' }}>
         <p style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 4 }}>{label}</p>
         {payload.map((p, i) => (
           <p key={i} style={{ color: p.color || '#fff', fontSize: 14, fontWeight: 600 }}>
@@ -126,7 +126,7 @@ export default function RevenueAnalyticsPage() {
 
   const statCards = [
     { label: 'Total Revenue', value: `$${(stats.totalRevenue || totalRevenueNum).toLocaleString()}`, icon: DollarSign, color: '#22c55e' },
-    { label: 'Monthly Revenue', value: `$${stats.monthlyRevenue.toLocaleString()}`, icon: TrendingUp, color: '#0F5EFF' },
+    { label: 'Monthly Revenue', value: `$${stats.monthlyRevenue.toLocaleString()}`, icon: TrendingUp, color: '#E53935' },
     { label: 'Daily Avg', value: `$${stats.dailyAvg.toLocaleString()}`, icon: Calendar, color: '#f59e0b' },
     { label: 'Growth Rate', value: `${stats.growthRate >= 0 ? '+' : ''}${stats.growthRate}%`, icon: ArrowUpRight, color: stats.growthRate >= 0 ? '#22c55e' : '#FF4757' },
   ];

@@ -34,10 +34,10 @@ const TICKER_ITEMS = [
 /* ───────────────────────── floating orbs ─────────────────────── */
 function FloatingOrbs() {
   const orbs = [
-    { size: 420, color: 'rgba(15,95,255,0.04)', top: '5%', left: '-8%', dur: 18 },
-    { size: 320, color: 'rgba(56,189,248,0.03)', top: '55%', right: '-6%', dur: 22 },
+    { size: 420, color: 'rgba(229,57,53,0.04)', top: '5%', left: '-8%', dur: 18 },
+    { size: 320, color: 'rgba(255,215,0,0.03)', top: '55%', right: '-6%', dur: 22 },
     { size: 260, color: 'rgba(255,215,0,0.02)', bottom: '8%', left: '20%', dur: 25 },
-    { size: 180, color: 'rgba(15,95,255,0.04)', top: '30%', right: '15%', dur: 20 },
+    { size: 180, color: 'rgba(229,57,53,0.04)', top: '30%', right: '15%', dur: 20 },
   ] as const;
 
   return (
@@ -66,7 +66,7 @@ function FloatingOrbs() {
 function TickerTape() {
   const items = [...TICKER_ITEMS, ...TICKER_ITEMS];
   return (
-    <div className="w-full overflow-hidden border-b border-[rgba(192,199,209,0.08)] bg-[rgba(8,27,58,0.4)]">
+    <div className="w-full overflow-hidden border-b border-[rgba(192,199,209,0.08)] bg-[rgba(10,15,26,0.5)]">
       <motion.div
         className="flex gap-8 whitespace-nowrap py-2"
         animate={{ x: ['0%', '-50%'] }}
@@ -91,7 +91,7 @@ function LeftPanel() {
   const features = [
     { icon: Shield, label: 'Bank-Grade Security', color: '#00E676' },
     { icon: Zap, label: 'Instant Transfers', color: '#FFD700' },
-    { icon: TrendingUp, label: 'Real-Time Analytics', color: '#38BDF8' },
+    { icon: TrendingUp, label: 'Real-Time Analytics', color: '#FFD700' },
   ];
 
   const stats = [
@@ -111,7 +111,7 @@ function LeftPanel() {
         className="absolute inset-0"
         style={{
           background:
-            'linear-gradient(180deg, rgba(8,27,58,0.82), rgba(8,27,58,0.65), rgba(8,27,58,0.88))',
+            'linear-gradient(180deg, rgba(10,15,26,0.92), rgba(10,15,26,0.75), rgba(10,15,26,0.92))',
         }}
       />
 
@@ -134,7 +134,7 @@ function LeftPanel() {
             <h1
               className="mt-1 text-4xl font-bold leading-tight"
               style={{
-                background: 'linear-gradient(135deg, #0F5EFF, #38BDF8)',
+                background: 'linear-gradient(135deg, #E53935, #FFD700)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
               }}
@@ -148,7 +148,7 @@ function LeftPanel() {
             {features.map((f) => (
               <div
                 key={f.label}
-                className="flex items-center gap-2 rounded-full border border-[rgba(192,199,209,0.12)] bg-[rgba(14,34,72,0.5)] px-4 py-2"
+                className="flex items-center gap-2 rounded-full border border-[rgba(192,199,209,0.12)] bg-[rgba(15,21,37,0.6)] px-4 py-2"
               >
                 <f.icon className="h-4 w-4" style={{ color: f.color }} />
                 <span className="text-[13px] text-[#C0C7D1]">{f.label}</span>
@@ -201,7 +201,7 @@ function FormInput({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-lg border bg-[rgba(8,27,58,0.6)] py-2.5 pl-10 pr-10 text-sm text-white placeholder-[#7A8599] outline-none transition-all duration-200 focus:border-[#0F5EFF] focus:shadow-[0_0_0_3px_rgba(15,95,255,0.12)]"
+          className="w-full rounded-lg border bg-[rgba(10,15,26,0.7)] py-2.5 pl-10 pr-10 text-sm text-white placeholder-[#7A8599] outline-none transition-all duration-200 focus:border-[#E53935] focus:shadow-[0_0_0_3px_rgba(229,57,53,0.12)]"
           style={{
             borderColor: error ? '#FF4757' : 'rgba(192,199,209,0.12)',
           }}
@@ -223,7 +223,7 @@ function SocialButtons() {
     <div className="flex gap-3">
       <button
         type="button"
-        className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-[rgba(192,199,209,0.12)] bg-[rgba(8,27,58,0.6)] py-2.5 text-sm text-[#C0C7D1] transition-colors hover:border-[rgba(192,199,209,0.25)] hover:text-white"
+        className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-[rgba(192,199,209,0.12)] bg-[rgba(10,15,26,0.7)] py-2.5 text-sm text-[#C0C7D1] transition-colors hover:border-[rgba(192,199,209,0.25)] hover:text-white"
       >
         <svg className="h-4 w-4" viewBox="0 0 24 24">
           <path
@@ -247,7 +247,7 @@ function SocialButtons() {
       </button>
       <button
         type="button"
-        className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-[rgba(192,199,209,0.12)] bg-[rgba(8,27,58,0.6)] py-2.5 text-sm text-[#C0C7D1] transition-colors hover:border-[rgba(192,199,209,0.25)] hover:text-white"
+        className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-[rgba(192,199,209,0.12)] bg-[rgba(10,15,26,0.7)] py-2.5 text-sm text-[#C0C7D1] transition-colors hover:border-[rgba(192,199,209,0.25)] hover:text-white"
       >
         <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
           <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.32 2.32-2.11 4.45-3.74 4.25z" />
@@ -387,7 +387,7 @@ function SignInContent() {
   };
 
   return (
-    <div className="relative flex min-h-screen bg-[#081B3A]">
+    <div className="relative flex min-h-screen bg-[#0A0F1A]">
       <FloatingOrbs />
 
       {/* ─── left panel (desktop) ─── */}
@@ -417,7 +417,7 @@ function SignInContent() {
             {/* back link (desktop) */}
             <button
               onClick={() => router.push('/')}
-              className="mb-6 hidden items-center gap-1.5 text-sm text-[#7A8599] transition-colors hover:text-[#38BDF8] lg:flex"
+              className="mb-6 hidden items-center gap-1.5 text-sm text-[#7A8599] transition-colors hover:text-[#FFD700] lg:flex"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to home
@@ -427,7 +427,7 @@ function SignInContent() {
             <div
               className="rounded-2xl border p-6 sm:p-8"
               style={{
-                background: 'rgba(14, 34, 72, 0.6)',
+                background: 'rgba(15, 21, 37, 0.7)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
                 borderColor: 'rgba(192, 199, 209, 0.15)',
@@ -440,7 +440,7 @@ function SignInContent() {
               </div>
 
               {/* tab switcher */}
-              <div className="mb-6 flex rounded-lg border border-[rgba(192,199,209,0.12)] bg-[rgba(8,27,58,0.6)] p-1">
+              <div className="mb-6 flex rounded-lg border border-[rgba(192,199,209,0.12)] bg-[rgba(10,15,26,0.7)] p-1">
                 {(['signin', 'register'] as const).map((tab) => (
                   <button
                     key={tab}
@@ -449,9 +449,9 @@ function SignInContent() {
                     className="relative flex-1 rounded-md py-2.5 text-sm font-medium transition-all duration-200"
                     style={{
                       color: mode === tab ? '#FFFFFF' : '#7A8599',
-                      background: mode === tab ? 'rgba(15,95,255,0.1)' : 'transparent',
+                      background: mode === tab ? 'rgba(229,57,53,0.1)' : 'transparent',
                       borderBottom:
-                        mode === tab ? '2px solid #0F5EFF' : '2px solid transparent',
+                        mode === tab ? '2px solid #E53935' : '2px solid transparent',
                       borderBottomLeftRadius: mode === tab ? 0 : undefined,
                       borderBottomRightRadius: mode === tab ? 0 : undefined,
                     }}
@@ -523,7 +523,7 @@ function SignInContent() {
                     <div className="flex items-center justify-end">
                       <button
                         type="button"
-                        className="text-xs text-[#38BDF8] transition-colors hover:underline"
+                        className="text-xs text-[#FFD700] transition-colors hover:underline"
                       >
                         Forgot password?
                       </button>
@@ -536,8 +536,8 @@ function SignInContent() {
                       whileTap={{ scale: 0.98 }}
                       className="relative flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white transition-shadow duration-300 disabled:opacity-60"
                       style={{
-                        background: 'linear-gradient(135deg, #0F5EFF, #38BDF8)',
-                        boxShadow: '0 0 20px rgba(15,95,255,0.2)',
+                        background: 'linear-gradient(135deg, #E53935, #FFD700)',
+                        boxShadow: '0 0 20px rgba(229,57,53,0.2)',
                       }}
                     >
                       {loading ? (
@@ -560,7 +560,7 @@ function SignInContent() {
                       <button
                         type="button"
                         onClick={() => switchMode('register')}
-                        className="text-[#38BDF8] transition-colors hover:underline"
+                        className="text-[#FFD700] transition-colors hover:underline"
                       >
                         Create Account
                       </button>
@@ -618,7 +618,7 @@ function SignInContent() {
                         <select
                           value={regCountryCode}
                           onChange={(e) => setRegCountryCode(e.target.value)}
-                          className="rounded-lg border bg-[rgba(8,27,58,0.6)] py-2.5 px-2 text-sm text-white outline-none transition-all duration-200 focus:border-[#0F5EFF]"
+                          className="rounded-lg border bg-[rgba(10,15,26,0.7)] py-2.5 px-2 text-sm text-white outline-none transition-all duration-200 focus:border-[#E53935]"
                           style={{ borderColor: fieldErrors.phone ? '#FF4757' : 'rgba(192,199,209,0.12)', width: 90, flexShrink: 0 }}
                         >
                           <option value="+1">🇺🇸 +1</option>
@@ -650,7 +650,7 @@ function SignInContent() {
                             placeholder="(XXX) XXX-XXXX"
                             value={regPhone}
                             onChange={(e) => setRegPhone(e.target.value)}
-                            className="w-full rounded-lg border bg-[rgba(8,27,58,0.6)] py-2.5 pl-10 pr-4 text-sm text-white placeholder-[#7A8599] outline-none transition-all duration-200 focus:border-[#0F5EFF] focus:shadow-[0_0_0_3px_rgba(15,95,255,0.12)]"
+                            className="w-full rounded-lg border bg-[rgba(10,15,26,0.7)] py-2.5 pl-10 pr-4 text-sm text-white placeholder-[#7A8599] outline-none transition-all duration-200 focus:border-[#E53935] focus:shadow-[0_0_0_3px_rgba(229,57,53,0.12)]"
                             style={{ borderColor: fieldErrors.phone ? '#FF4757' : 'rgba(192,199,209,0.12)' }}
                           />
                         </div>
@@ -720,8 +720,8 @@ function SignInContent() {
                       whileTap={{ scale: 0.98 }}
                       className="relative mt-1 flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white transition-shadow duration-300 disabled:opacity-60"
                       style={{
-                        background: 'linear-gradient(135deg, #0F5EFF, #38BDF8)',
-                        boxShadow: '0 0 20px rgba(15,95,255,0.2)',
+                        background: 'linear-gradient(135deg, #E53935, #FFD700)',
+                        boxShadow: '0 0 20px rgba(229,57,53,0.2)',
                       }}
                     >
                       {loading ? (
@@ -744,7 +744,7 @@ function SignInContent() {
                       <button
                         type="button"
                         onClick={() => switchMode('signin')}
-                        className="text-[#38BDF8] transition-colors hover:underline"
+                        className="text-[#FFD700] transition-colors hover:underline"
                       >
                         Sign In
                       </button>
@@ -757,7 +757,7 @@ function SignInContent() {
             {/* mobile bottom trust badges */}
             <div className="mt-6 flex flex-wrap justify-center gap-4 lg:hidden">
               <div className="flex items-center gap-1.5 text-xs text-[#7A8599]">
-                <Smartphone className="h-3.5 w-3.5 text-[#38BDF8]" />
+                <Smartphone className="h-3.5 w-3.5 text-[#FFD700]" />
                 Mobile Ready
               </div>
               <div className="flex items-center gap-1.5 text-xs text-[#7A8599]">
@@ -781,8 +781,8 @@ export default function SignInPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-[#081B3A]">
-          <Loader2 className="h-8 w-8 animate-spin text-[#0F5EFF]" />
+        <div className="flex min-h-screen items-center justify-center bg-[#0A0F1A]">
+          <Loader2 className="h-8 w-8 animate-spin text-[#E53935]" />
         </div>
       }
     >

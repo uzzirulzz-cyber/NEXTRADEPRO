@@ -22,22 +22,22 @@ import {
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
-/* ─── NexTrade Pro Theme: Blue / Silver / White / Gold ─── */
+/* ─── NexTrade Pro Theme: Silver / Yellow / White / Red ─── */
 const C = {
-  bgDarkest: '#060F23',
-  bgDark: '#081B3A',
-  bgBase: '#0B1F3F',
-  bgCard: 'rgba(14, 34, 72, 0.5)',
-  bgCardHover: 'rgba(15, 95, 255, 0.08)',
-  bgSubtle: 'rgba(8, 27, 58, 0.8)',
+  bgDarkest: '#060A14',
+  bgDark: '#0A0F1A',
+  bgBase: '#0E1525',
+  bgCard: 'rgba(15, 21, 37, 0.6)',
+  bgCardHover: 'rgba(229, 57, 53, 0.08)',
+  bgSubtle: 'rgba(10, 15, 26, 0.9)',
   border: 'rgba(192, 199, 209, 0.12)',
   borderHover: 'rgba(192, 199, 209, 0.25)',
-  accent: '#0F5EFF',
-  accentDark: '#0D4FD4',
-  accentBlue: '#38BDF8',
-  ctaRed: '#0F5EFF',
-  ctaRedHover: '#38BDF8',
-  ctaRedGlow: 'rgba(15, 95, 255, 0.35)',
+  accent: '#E53935',
+  accentDark: '#C62828',
+  accentYellow: '#FFD700',
+  ctaRed: '#E53935',
+  ctaRedHover: '#FFD700',
+  ctaRedGlow: 'rgba(229, 57, 53, 0.35)',
   textPrimary: '#FFFFFF',
   textSecondary: '#C0C7D1',
   textMuted: '#7A8599',
@@ -231,7 +231,7 @@ export default function HomePage() {
               top: -200,
               left: '50%',
               transform: 'translateX(-50%)',
-              background: 'radial-gradient(circle, rgba(15,95,255,0.1) 0%, transparent 65%)',
+              background: 'radial-gradient(circle, rgba(229,57,53,0.1) 0%, transparent 65%)',
             }}
           />
         </div>
@@ -266,7 +266,7 @@ export default function HomePage() {
             Trade Smarter.{' '}
             <span
               style={{
-                background: `linear-gradient(135deg, ${C.accent}, ${C.accentBlue})`,
+                background: `linear-gradient(135deg, ${C.accent}, ${C.accentYellow})`,
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
               }}
@@ -622,7 +622,7 @@ export default function HomePage() {
                     <div
                       className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold"
                       style={{
-                        background: `linear-gradient(135deg, ${C.accent}, ${C.accentBlue})`,
+                        background: `linear-gradient(135deg, ${C.accent}, ${C.accentYellow})`,
                         color: '#fff',
                       }}
                     >

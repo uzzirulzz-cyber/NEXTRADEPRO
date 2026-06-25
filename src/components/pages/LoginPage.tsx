@@ -72,7 +72,7 @@ export default function LoginPage() {
           height: 400,
           top: '-10%',
           right: '-5%',
-          background: 'radial-gradient(circle, rgba(15,95,255,0.08) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(229,57,53,0.08) 0%, transparent 70%)',
         }}
       />
       <div
@@ -100,7 +100,7 @@ export default function LoginPage() {
             style={{
               width: 56,
               height: 56,
-              background: 'linear-gradient(135deg, #0F5EFF, #38BDF8)',
+              background: 'linear-gradient(135deg, #E53935, #FFD700)',
             }}
           >
             <span style={{ fontSize: 28 }}>⚡</span>

@@ -46,7 +46,7 @@ export default function MobileBottomNav() {
         left: 0,
         right: 0,
         height: 72,
-        background: 'rgba(8, 27, 58, 0.92)',
+        background: 'rgba(10, 15, 26, 0.92)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
         borderTop: '1px solid rgba(192, 199, 209, 0.1)',
@@ -85,15 +85,15 @@ export default function MobileBottomNav() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: isActive ? 'rgba(15, 95, 255, 0.12)' : 'transparent',
+                background: isActive ? 'rgba(229, 57, 53, 0.12)' : 'transparent',
                 transition: 'all 0.2s',
-                boxShadow: isActive ? '0 0 12px rgba(15, 95, 255, 0.15)' : 'none',
+                boxShadow: isActive ? '0 0 12px rgba(229, 57, 53, 0.15)' : 'none',
               }}
             >
               <Icon
                 size={21}
                 style={{
-                  color: isActive ? '#38BDF8' : '#7A8599',
+                  color: isActive ? '#FFD700' : '#7A8599',
                   transition: 'color 0.2s',
                   strokeWidth: isActive ? 2.2 : 1.6,
                 }}
@@ -103,7 +103,7 @@ export default function MobileBottomNav() {
               style={{
                 fontSize: 10,
                 fontWeight: isActive ? 600 : 400,
-                color: isActive ? '#38BDF8' : '#7A8599',
+                color: isActive ? '#FFD700' : '#7A8599',
                 transition: 'color 0.2s',
               }}
             >

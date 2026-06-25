@@ -112,7 +112,7 @@ export default function NotificationManagementPage() {
   }
 
   const statCards = [
-    { label: 'Total Sent', value: stats.totalSent.toLocaleString(), icon: Send, color: '#0F5EFF' },
+    { label: 'Total Sent', value: stats.totalSent.toLocaleString(), icon: Send, color: '#E53935' },
     { label: 'Read Rate', value: `${stats.readRate}%`, icon: MailOpen, color: '#22c55e' },
     { label: 'Unread Count', value: stats.unreadCount.toLocaleString(), icon: MailX, color: '#FF4757' },
   ];

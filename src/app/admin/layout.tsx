@@ -148,7 +148,7 @@ function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void })
                   cursor: 'pointer',
                 }}
               >
-                <span style={{ flexShrink: 0, color: isActive ? '#38BDF8' : undefined }}>{item.icon}</span>
+                <span style={{ flexShrink: 0, color: isActive ? '#FFD700' : undefined }}>{item.icon}</span>
                 <AnimatePresence>
                   {open && (
                     <motion.span
@@ -250,7 +250,7 @@ function AdminHeader({
     <header
       className="flex items-center justify-between px-6 h-16 border-b"
       style={{
-        background: 'rgba(8, 27, 58, 0.95)',
+        background: 'rgba(10, 15, 26, 0.95)',
         backdropFilter: 'blur(12px)',
         borderColor: 'rgba(192, 199, 209, 0.1)',
         flexShrink: 0,
@@ -261,7 +261,7 @@ function AdminHeader({
           onClick={onToggle}
           className="p-2 rounded-lg transition-colors cursor-pointer"
           style={{ color: '#C0C7D1' }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(15,95,255,0.08)')}
+          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(229,57,53,0.08)')}
           onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
         >
           <Menu size={20} />
@@ -280,7 +280,7 @@ function AdminHeader({
             fontSize: 13,
             border: '1px solid rgba(192,199,209,0.12)',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(15,95,255,0.08)')}
+          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(229,57,53,0.08)')}
           onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
         >
           <Home size={14} />
@@ -293,10 +293,10 @@ function AdminHeader({
             style={{
               width: 32,
               height: 32,
-              background: 'rgba(15, 95, 255, 0.15)',
-              border: '1px solid rgba(15, 95, 255, 0.3)',
+              background: 'rgba(229, 57, 53, 0.15)',
+              border: '1px solid rgba(229, 57, 53, 0.3)',
               fontSize: 13,
-              color: '#38BDF8',
+              color: '#FFD700',
               flexShrink: 0,
             }}
           >
@@ -345,8 +345,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (checking) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#081B3A' }}>
-        <div className="animate-spin" style={{ width: 32, height: 32, border: '3px solid rgba(192,199,209,0.12)', borderTopColor: '#0F5EFF', borderRadius: '50%' }} />
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0A0F1A' }}>
+        <div className="animate-spin" style={{ width: 32, height: 32, border: '3px solid rgba(192,199,209,0.12)', borderTopColor: '#E53935', borderRadius: '50%' }} />
       </div>
     );
   }
@@ -354,7 +354,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!authorized) return null;
 
   return (
-    <div className="relative flex h-screen overflow-hidden" style={{ background: '#081B3A' }}>
+    <div className="relative flex h-screen overflow-hidden" style={{ background: '#0A0F1A' }}>
       {/* Background image with dark overlay */}
       <div
         className="absolute inset-0 z-0"
@@ -369,7 +369,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div
         className="absolute inset-0 z-0"
         style={{
-          background: 'linear-gradient(135deg, rgba(8,27,58,0.92), rgba(6,15,35,0.88))',
+          background: 'linear-gradient(135deg, rgba(10,15,26,0.92), rgba(6,15,35,0.88))',
         }}
       />
 

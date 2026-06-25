@@ -167,7 +167,7 @@ export default function RegisterPage() {
           height: 400,
           top: '-10%',
           left: '-5%',
-          background: 'radial-gradient(circle, rgba(15,95,255,0.08) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(229,57,53,0.08) 0%, transparent 70%)',
         }}
       />
       <div
@@ -177,7 +177,7 @@ export default function RegisterPage() {
           height: 350,
           bottom: '-8%',
           right: '-5%',
-          background: 'radial-gradient(circle, rgba(56,189,248,0.06) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(255,215,0,0.06) 0%, transparent 70%)',
         }}
       />
 
@@ -205,7 +205,7 @@ export default function RegisterPage() {
             style={{
               width: 48,
               height: 48,
-              background: 'linear-gradient(135deg, #0F5EFF, #38BDF8)',
+              background: 'linear-gradient(135deg, #E53935, #FFD700)',
             }}
           >
             <span style={{ fontSize: 24 }}>&#9889;</span>
@@ -327,7 +327,7 @@ export default function RegisterPage() {
                 }}
               >
                 {COUNTRY_CODES.map((c) => (
-                  <option key={c.code} value={c.code} style={{ background: '#0B1F3F', color: '#FFFFFF' }}>
+                  <option key={c.code} value={c.code} style={{ background: '#0E1525', color: '#FFFFFF' }}>
                     {c.flag} {c.code}
                   </option>
                 ))}

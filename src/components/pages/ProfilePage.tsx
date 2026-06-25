@@ -119,7 +119,7 @@ export default function ProfilePage() {
             style={{
               width: 80,
               height: 80,
-              background: 'linear-gradient(135deg, #0F5EFF, #38BDF8)',
+              background: 'linear-gradient(135deg, #E53935, #FFD700)',
               fontSize: 28,
               fontWeight: 700,
               color: '#fff',

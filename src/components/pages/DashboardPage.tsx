@@ -86,7 +86,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
     return (
       <div
         style={{
-          background: 'rgba(8, 27, 58, 0.95)',
+          background: 'rgba(10, 15, 26, 0.95)',
           border: '1px solid var(--border-color)',
           borderRadius: 8,
           padding: '10px 14px',
@@ -111,7 +111,7 @@ export default function DashboardPage() {
   const quickActions = [
     { label: 'Deposit', icon: ArrowUpRight, color: '#22c55e', page: Pages.DEPOSIT },
     { label: 'Withdraw', icon: ArrowDownRight, color: '#FF4757', page: Pages.WITHDRAW },
-    { label: 'Trade', icon: Zap, color: '#0F5EFF', page: Pages.TRADING },
+    { label: 'Trade', icon: Zap, color: '#E53935', page: Pages.TRADING },
     { label: 'Invite', icon: Users, color: '#f59e0b', page: Pages.REFERRAL },
   ];
 
@@ -192,7 +192,7 @@ export default function DashboardPage() {
                 background: 'rgba(59, 130, 246, 0.15)',
               }}
             >
-              <Activity size={20} style={{ color: '#0F5EFF' }} />
+              <Activity size={20} style={{ color: '#E53935' }} />
             </div>
           </div>
           <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
@@ -243,8 +243,8 @@ export default function DashboardPage() {
               <AreaChart data={portfolioData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="portfolioGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#0F5EFF" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#0F5EFF" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#E53935" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#E53935" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <XAxis
@@ -265,7 +265,7 @@ export default function DashboardPage() {
                 <Area
                   type="monotone"
                   dataKey="value"
-                  stroke="#0F5EFF"
+                  stroke="#E53935"
                   strokeWidth={2}
                   fill="url(#portfolioGradient)"
                   isAnimationActive={false}

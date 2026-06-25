@@ -104,7 +104,7 @@ export default function LockScreenPage() {
           style={{
             width: 80,
             height: 80,
-            background: 'linear-gradient(135deg, #0F5EFF, #38BDF8)',
+            background: 'linear-gradient(135deg, #E53935, #FFD700)',
           }}
         >
           <span className="text-2xl font-bold text-white">{initials}</span>

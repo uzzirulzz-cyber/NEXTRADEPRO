@@ -126,10 +126,10 @@ export default function WithdrawalManagementPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Requests', value: stats.total, icon: Wallet, color: '#0F5EFF' },
+          { label: 'Total Requests', value: stats.total, icon: Wallet, color: '#E53935' },
           { label: 'Pending', value: stats.pending, icon: Clock, color: '#f59e0b' },
           { label: 'Completed', value: stats.completed, icon: CheckCircle, color: '#22c55e' },
-          { label: 'Total Amount', value: `$${stats.totalAmount.toLocaleString()}`, icon: ArrowUpRight, color: '#38BDF8' },
+          { label: 'Total Amount', value: `$${stats.totalAmount.toLocaleString()}`, icon: ArrowUpRight, color: '#FFD700' },
         ].map((s) => (
           <motion.div key={s.label} className="stat-card" variants={itemVariants}>
             <div className="flex items-center justify-between mb-3">
@@ -151,7 +151,7 @@ export default function WithdrawalManagementPage() {
 
       {/* Filters */}
       <motion.div className="flex flex-wrap items-center gap-3" variants={itemVariants}>
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'rgba(8,27,58,0.6)', border: '1px solid rgba(192,199,209,0.12)', minWidth: 220 }}>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'rgba(10,15,26,0.7)', border: '1px solid rgba(192,199,209,0.12)', minWidth: 220 }}>
           <Search size={16} style={{ color: '#7A8599' }} />
           <input
             type="text"
@@ -166,7 +166,7 @@ export default function WithdrawalManagementPage() {
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
           className="rounded-lg px-3 py-2 text-sm outline-none cursor-pointer"
-          style={{ background: 'rgba(8,27,58,0.6)', border: '1px solid rgba(192,199,209,0.12)', color: '#C0C7D1' }}
+          style={{ background: 'rgba(10,15,26,0.7)', border: '1px solid rgba(192,199,209,0.12)', color: '#C0C7D1' }}
         >
           <option value="">All Status</option>
           <option value="PENDING">Pending</option>
@@ -245,7 +245,7 @@ export default function WithdrawalManagementPage() {
               {withdrawals.length === 0 && (
                 <tr>
                   <td colSpan={7} className="text-center py-12" style={{ color: '#7A8599' }}>
-                    <ArrowUpRight size={32} style={{ color: '#0F5EFF', margin: '0 auto 12px', display: 'block', opacity: 0.4 }} />
+                    <ArrowUpRight size={32} style={{ color: '#E53935', margin: '0 auto 12px', display: 'block', opacity: 0.4 }} />
                     No withdrawal requests found
                   </td>
                 </tr>
@@ -265,7 +265,7 @@ export default function WithdrawalManagementPage() {
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
                 className="p-1.5 rounded-lg cursor-pointer disabled:opacity-30"
-                style={{ background: 'rgba(15,95,255,0.08)', color: '#C0C7D1' }}
+                style={{ background: 'rgba(229,57,53,0.08)', color: '#C0C7D1' }}
               >
                 <ChevronLeft size={16} />
               </button>
@@ -278,8 +278,8 @@ export default function WithdrawalManagementPage() {
                     onClick={() => setPage(p)}
                     className="px-3 py-1 rounded-lg text-sm font-medium cursor-pointer"
                     style={{
-                      background: p === page ? 'rgba(15,95,255,0.15)' : 'transparent',
-                      color: p === page ? '#38BDF8' : '#7A8599',
+                      background: p === page ? 'rgba(229,57,53,0.15)' : 'transparent',
+                      color: p === page ? '#FFD700' : '#7A8599',
                     }}
                   >
                     {p}
@@ -290,7 +290,7 @@ export default function WithdrawalManagementPage() {
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
                 className="p-1.5 rounded-lg cursor-pointer disabled:opacity-30"
-                style={{ background: 'rgba(15,95,255,0.08)', color: '#C0C7D1' }}
+                style={{ background: 'rgba(229,57,53,0.08)', color: '#C0C7D1' }}
               >
                 <ChevronRight size={16} />
               </button>

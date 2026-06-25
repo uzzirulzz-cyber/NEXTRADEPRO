@@ -92,7 +92,7 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
     return (
       <div
         style={{
-          background: 'rgba(8, 27, 58, 0.95)',
+          background: 'rgba(10, 15, 26, 0.95)',
           border: '1px solid var(--border-color)',
           borderRadius: 8,
           padding: '10px 14px',
@@ -343,8 +343,8 @@ export default function TradingPage() {
             <AreaChart data={priceData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0F5EFF" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#0F5EFF" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#E53935" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#E53935" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(192, 199, 209, 0.08)" />
@@ -366,7 +366,7 @@ export default function TradingPage() {
               <Area
                 type="monotone"
                 dataKey="price"
-                stroke="#0F5EFF"
+                stroke="#E53935"
                 strokeWidth={2}
                 fill="url(#priceGradient)"
                 isAnimationActive={false}
@@ -383,7 +383,7 @@ export default function TradingPage() {
               <YAxis hide />
               <Tooltip
                 contentStyle={{
-                  background: 'rgba(8, 27, 58, 0.95)',
+                  background: 'rgba(10, 15, 26, 0.95)',
                   border: '1px solid var(--border-color)',
                   borderRadius: 8,
                   fontSize: 12,
@@ -394,7 +394,7 @@ export default function TradingPage() {
                 formatter={(value: any) => [`${value} BTC`, 'Volume']}
                 labelFormatter={(label: any) => String(label)}
               />
-              <Bar dataKey="volume" fill="#0F5EFF" opacity={0.4} radius={[2, 2, 0, 0]} isAnimationActive={false} />
+              <Bar dataKey="volume" fill="#E53935" opacity={0.4} radius={[2, 2, 0, 0]} isAnimationActive={false} />
             </BarChart>
           </ResponsiveContainer>
         </div>
