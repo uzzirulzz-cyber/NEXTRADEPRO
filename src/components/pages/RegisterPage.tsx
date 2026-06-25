@@ -2,12 +2,42 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, User, Ticket, Loader2, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, User, Ticket, Loader2, Eye, EyeOff, ArrowLeft, Phone } from 'lucide-react';
 import { useStore, Pages } from '@/store/useStore';
 
+const COUNTRY_CODES = [
+  { code: '+1', flag: '\u{1F1FA}\u{1F1F8}', country: 'US' },
+  { code: '+44', flag: '\u{1F1EC}\u{1F1E7}', country: 'UK' },
+  { code: '+92', flag: '\u{1F1F5}\u{1F1F0}', country: 'PK' },
+  { code: '+91', flag: '\u{1F1EE}\u{1F1F3}', country: 'IN' },
+  { code: '+86', flag: '\u{1F1E8}\u{1F1F3}', country: 'CN' },
+  { code: '+81', flag: '\u{1F1EF}\u{1F1F5}', country: 'JP' },
+  { code: '+49', flag: '\u{1F1E9}\u{1F1EA}', country: 'DE' },
+  { code: '+33', flag: '\u{1F1EB}\u{1F1F7}', country: 'FR' },
+  { code: '+971', flag: '\u{1F1E6}\u{1F1EA}', country: 'AE' },
+  { code: '+966', flag: '\u{1F1F8}\u{1F1E6}', country: 'SA' },
+  { code: '+234', flag: '\u{1F1F3}\u{1F1EC}', country: 'NG' },
+  { code: '+55', flag: '\u{1F1E7}\u{1F1F7}', country: 'BR' },
+  { code: '+61', flag: '\u{1F1E6}\u{1F1FA}', country: 'AU' },
+  { code: '+82', flag: '\u{1F1F0}\u{1F1F7}', country: 'KR' },
+  { code: '+39', flag: '\u{1F1EE}\u{1F1F9}', country: 'IT' },
+  { code: '+34', flag: '\u{1F1EA}\u{1F1F8}', country: 'ES' },
+  { code: '+7', flag: '\u{1F1F7}\u{1F1FA}', country: 'RU' },
+  { code: '+27', flag: '\u{1F1FF}\u{1F1E6}', country: 'ZA' },
+  { code: '+20', flag: '\u{1F1EA}\u{1F1EC}', country: 'EG' },
+  { code: '+52', flag: '\u{1F1F2}\u{1F1FD}', country: 'MX' },
+  { code: '+63', flag: '\u{1F1F5}\u{1F1ED}', country: 'PH' },
+  { code: '+62', flag: '\u{1F1EE}\u{1F1E9}', country: 'ID' },
+  { code: '+60', flag: '\u{1F1F2}\u{1F1FE}', country: 'MY' },
+  { code: '+90', flag: '\u{1F1F9}\u{1F1F7}', country: 'TR' },
+  { code: '+880', flag: '\u{1F1E7}\u{1F1E9}', country: 'BD' },
+];
+
 interface FormErrors {
-  name?: string;
+  firstName?: string;
+  lastName?: string;
   email?: string;
+  phone?: string;
   password?: string;
   confirmPassword?: string;
   code?: string;
@@ -15,8 +45,11 @@ interface FormErrors {
 
 export default function RegisterPage() {
   const { navigate } = useStore();
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [countryCode, setCountryCode] = useState('+1');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [code, setCode] = useState('');
@@ -26,23 +59,40 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
 
+  // Pre-fill invitation code from localStorage (set by /reg page)
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('invitationCode');
+      if (saved) {
+        setCode(saved);
+        localStorage.removeItem('invitationCode');
+      }
+    }
+  }, []);
+
   function validate(): boolean {
     const errs: FormErrors = {};
 
-    if (!name.trim()) errs.name = 'Name is required';
-    else if (name.trim().length < 2) errs.name = 'Name must be at least 2 characters';
+    if (!firstName.trim()) errs.firstName = 'First name is required';
+    else if (firstName.trim().length < 2) errs.firstName = 'At least 2 characters';
+
+    if (!lastName.trim()) errs.lastName = 'Last name is required';
+    else if (lastName.trim().length < 2) errs.lastName = 'At least 2 characters';
 
     if (!email.trim()) errs.email = 'Email is required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errs.email = 'Invalid email format';
 
-    if (!password) errs.password = 'Password is required';
-    else if (password.length < 6) errs.password = 'Password must be at least 6 characters';
+    if (!phone.trim()) errs.phone = 'Phone number is required';
+    else if (!/^\d{5,15}$/.test(phone.replace(/[\s\-()]/g, ''))) errs.phone = 'Enter a valid phone number';
 
-    if (!confirmPassword) errs.confirmPassword = 'Please confirm your password';
+    if (!password) errs.password = 'Password is required';
+    else if (password.length < 6) errs.password = 'Min. 6 characters';
+
+    if (!confirmPassword) errs.confirmPassword = 'Please confirm password';
     else if (password !== confirmPassword) errs.confirmPassword = 'Passwords do not match';
 
     if (!code.trim()) errs.code = 'Invitation code is required';
-    else if (code.trim().length < 4) errs.code = 'Invalid invitation code format';
+    else if (code.trim().length < 4) errs.code = 'Invalid code format';
 
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -60,8 +110,10 @@ export default function RegisterPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: name.trim(),
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
           email: email.trim(),
+          phone: `${countryCode} ${phone.trim()}`.trim(),
           password,
           invitationCode: code.trim(),
         }),
@@ -74,8 +126,9 @@ export default function RegisterPage() {
         return;
       }
 
-      // Redirect to login on success
-      navigate(Pages.LOGIN);
+      // Auto-login after registration
+      const { setAuth } = useStore.getState();
+      setAuth(data.user, data.token);
     } catch {
       setError('Network error. Please check your connection.');
     } finally {
@@ -114,7 +167,7 @@ export default function RegisterPage() {
           height: 400,
           top: '-10%',
           left: '-5%',
-          background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(15,95,255,0.08) 0%, transparent 70%)',
         }}
       />
       <div
@@ -124,7 +177,7 @@ export default function RegisterPage() {
           height: 350,
           bottom: '-8%',
           right: '-5%',
-          background: 'radial-gradient(circle, rgba(6,182,212,0.08) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(56,189,248,0.06) 0%, transparent 70%)',
         }}
       />
 
@@ -133,7 +186,7 @@ export default function RegisterPage() {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, ease: 'easeOut' as const }}
         className="glass-card w-full relative z-10"
-        style={{ maxWidth: 420, padding: '36px 32px' }}
+        style={{ maxWidth: 460, padding: '36px 32px' }}
       >
         {/* Back link */}
         <button
@@ -155,7 +208,7 @@ export default function RegisterPage() {
               background: 'linear-gradient(135deg, #0F5EFF, #38BDF8)',
             }}
           >
-            <span style={{ fontSize: 24 }}>⚡</span>
+            <span style={{ fontSize: 24 }}>&#9889;</span>
           </div>
           <h1 className="gradient-text" style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em' }}>
             Create Account
@@ -167,31 +220,58 @@ export default function RegisterPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
-          {/* Name */}
-          <div>
-            <label
-              className="block mb-1.5"
-              style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}
-            >
-              Full Name
-            </label>
-            <div className="relative">
-              <User
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2"
-                style={{ color: 'var(--text-muted)' }}
-              />
-              <input
-                type="text"
-                className="input-field"
-                style={{ paddingLeft: 40 }}
-                placeholder="John Doe"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                autoComplete="name"
-              />
+          {/* First Name + Last Name */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label
+                className="block mb-1.5"
+                style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}
+              >
+                First Name
+              </label>
+              <div className="relative">
+                <User
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2"
+                  style={{ color: 'var(--text-muted)' }}
+                />
+                <input
+                  type="text"
+                  className="input-field"
+                  style={{ paddingLeft: 40 }}
+                  placeholder="John"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  autoComplete="given-name"
+                />
+              </div>
+              {fieldError('firstName')}
             </div>
-            {fieldError('name')}
+            <div>
+              <label
+                className="block mb-1.5"
+                style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}
+              >
+                Last Name
+              </label>
+              <div className="relative">
+                <User
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2"
+                  style={{ color: 'var(--text-muted)' }}
+                />
+                <input
+                  type="text"
+                  className="input-field"
+                  style={{ paddingLeft: 40 }}
+                  placeholder="Doe"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  autoComplete="family-name"
+                />
+              </div>
+              {fieldError('lastName')}
+            </div>
           </div>
 
           {/* Email */}
@@ -221,6 +301,60 @@ export default function RegisterPage() {
             {fieldError('email')}
           </div>
 
+          {/* Phone with Country Code */}
+          <div>
+            <label
+              className="block mb-1.5"
+              style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}
+            >
+              Phone Number
+            </label>
+            <div className="flex gap-2">
+              <select
+                value={countryCode}
+                onChange={(e) => setCountryCode(e.target.value)}
+                className="rounded-lg border text-sm outline-none transition-all duration-200"
+                style={{
+                  paddingLeft: 8,
+                  paddingRight: 6,
+                  paddingTop: '10px',
+                  paddingBottom: '10px',
+                  background: 'var(--bg-input)',
+                  borderColor: errors.phone ? 'var(--accent-red)' : 'var(--border-color)',
+                  color: 'var(--text-primary)',
+                  width: 110,
+                  flexShrink: 0,
+                }}
+              >
+                {COUNTRY_CODES.map((c) => (
+                  <option key={c.code} value={c.code} style={{ background: '#0B1F3F', color: '#FFFFFF' }}>
+                    {c.flag} {c.code}
+                  </option>
+                ))}
+              </select>
+              <div className="relative flex-1">
+                <Phone
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2"
+                  style={{ color: 'var(--text-muted)' }}
+                />
+                <input
+                  type="tel"
+                  className="input-field"
+                  style={{
+                    paddingLeft: 40,
+                    borderColor: errors.phone ? 'var(--accent-red)' : undefined,
+                  }}
+                  placeholder="(XXX) XXX-XXXX"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  autoComplete="tel"
+                />
+              </div>
+            </div>
+            {fieldError('phone')}
+          </div>
+
           {/* Password */}
           <div>
             <label
@@ -239,7 +373,7 @@ export default function RegisterPage() {
                 type={showPassword ? 'text' : 'password'}
                 className="input-field"
                 style={{ paddingLeft: 40, paddingRight: 40 }}
-                placeholder="••••••••"
+                placeholder="Min. 6 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="new-password"
@@ -274,7 +408,7 @@ export default function RegisterPage() {
                 type={showConfirm ? 'text' : 'password'}
                 className="input-field"
                 style={{ paddingLeft: 40, paddingRight: 40 }}
-                placeholder="••••••••"
+                placeholder="Re-enter password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 autoComplete="new-password"
@@ -325,8 +459,8 @@ export default function RegisterPage() {
               animate={{ opacity: 1, y: 0 }}
               className="px-3 py-2 rounded-lg text-center"
               style={{
-                background: 'rgba(239,68,68,0.1)',
-                border: '1px solid rgba(239,68,68,0.2)',
+                background: 'rgba(255,71,87,0.08)',
+                border: '1px solid rgba(255,71,87,0.2)',
                 color: 'var(--accent-red)',
                 fontSize: 13,
               }}

@@ -154,7 +154,8 @@ if (typeof window !== 'undefined') {
         user,
         token,
         isAuthenticated: true,
-        currentPage: user.role === 'SUPER_ADMIN' ? Pages.ADMIN_USERS : user.role === 'SUB_AGENT' ? Pages.DASHBOARD : Pages.DASHBOARD,
+        currentPage: (user.role === 'SUPER_ADMIN' || user.role === 'SUB_AGENT') ? Pages.ADMIN_USERS : Pages.DASHBOARD,
+        pageHistory: [(user.role === 'SUPER_ADMIN' || user.role === 'SUB_AGENT') ? Pages.ADMIN_USERS : Pages.DASHBOARD],
       });
     } catch {}
   }

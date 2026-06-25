@@ -5,6 +5,8 @@ export type UserStatus = 'ACTIVE' | 'SUSPENDED' | 'LOCKED';
 
 export interface IUser extends Document {
   name: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   password: string;
   role: UserRole;
@@ -21,6 +23,8 @@ export interface IUser extends Document {
 const UserSchema = new Schema<IUser>(
   {
     name: { type: String, required: true, trim: true },
+    firstName: { type: String, trim: true },
+    lastName: { type: String, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['SUPER_ADMIN', 'SUB_AGENT', 'USER'], default: 'USER' },

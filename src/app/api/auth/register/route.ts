@@ -10,13 +10,35 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
 
-    const { firstName, lastName, email, phone, password, invitationCode } = await req.json();
+    const body = await req.json();
+    const { firstName, lastName, email, phone, password, invitationCode, name } = body;
 
-    if (!firstName || !lastName || !email || !password) {
-      return NextResponse.json({ error: 'First name, last name, email, and password are required' }, { status: 400 });
+    // Support both { firstName, lastName } and legacy { name } formats
+    let finalFirstName = firstName?.trim();
+    let finalLastName = lastName?.trim();
+    let fullName: string;
+
+    if (finalFirstName && finalLastName) {
+      fullName = `${finalFirstName} ${finalLastName}`.trim();
+    } else if (name?.trim()) {
+      // Legacy format: split "John Doe" into first/last
+      const parts = name.trim().split(/\s+/);
+      finalFirstName = parts[0] || '';
+      finalLastName = parts.slice(1).join(' ') || '';
+      fullName = name.trim();
+    } else {
+      return NextResponse.json(
+        { error: 'First name, last name, email, and password are required' },
+        { status: 400 }
+      );
     }
 
-    const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: 'Email and password are required' },
+        { status: 400 }
+      );
+    }
 
     // Determine role — if invitation code provided, validate it; otherwise default to USER
     let role = 'USER';
@@ -50,6 +72,8 @@ export async function POST(req: NextRequest) {
     // Create user
     const user = await User.create({
       name: fullName,
+      firstName: finalFirstName,
+      lastName: finalLastName,
       email: email.toLowerCase(),
       password: hashedPw,
       role,

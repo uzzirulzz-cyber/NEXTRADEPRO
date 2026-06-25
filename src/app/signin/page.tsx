@@ -640,7 +640,7 @@ function SignInContent() {
                           <option value="+7">🇷🇺 +7</option>
                           <option value="+27">🇿🇦 +27</option>
                           <option value="+20">🇪🇬 +20</option>
-                          <option value="+55">🇲🇽 +52</option>
+                          <option value="+52">🇲🇽 +52</option>
                           <option value="+63">🇵🇭 +63</option>
                         </select>
                         <div className="relative flex-1">

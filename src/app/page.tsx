@@ -1,11 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useStore, Pages } from '@/store/useStore';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import HomePage from '@/components/pages/HomePage';
+import LoginPage from '@/components/pages/LoginPage';
+import RegisterPage from '@/components/pages/RegisterPage';
 import DashboardPage from '@/components/pages/DashboardPage';
 import TradingPage from '@/components/pages/TradingPage';
 import WalletPage from '@/components/pages/WalletPage';
@@ -61,8 +63,39 @@ function PageRouter() {
 export default function Home() {
   const { isAuthenticated, currentPage } = useStore();
 
-  /* Unauthenticated users see the FunderPro-style landing page */
+  // Re-hydrate auth from localStorage on every mount
+  // This handles the case where the user logs in via /signin (standalone page)
+  // and gets redirected back to / — the store module-level hydration only runs once,
+  // so we need this effect to pick up localStorage changes from other routes.
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem('nextrade_token');
+      const userStr = localStorage.getItem('nextrade_user');
+      if (token && userStr) {
+        const user = JSON.parse(userStr);
+        const store = useStore.getState();
+        if (!store.isAuthenticated) {
+          const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'SUB_AGENT';
+          useStore.setState({
+            user,
+            token,
+            isAuthenticated: true,
+            currentPage: isAdmin ? Pages.ADMIN_USERS : Pages.DASHBOARD,
+            pageHistory: [isAdmin ? Pages.ADMIN_USERS : Pages.DASHBOARD],
+          });
+        }
+      }
+    } catch {}
+  }, []);
+
+  /* Unauthenticated users: route to login, register, or landing page */
   if (!isAuthenticated) {
+    if (currentPage === Pages.REGISTER) {
+      return <RegisterPage />;
+    }
+    if (currentPage === Pages.LOGIN) {
+      return <LoginPage />;
+    }
     return <HomePage />;
   }
 
