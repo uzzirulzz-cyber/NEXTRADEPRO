@@ -355,10 +355,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="relative flex h-screen overflow-hidden" style={{ background: '#081B3A' }}>
+      {/* Background image with dark overlay */}
+      <div
+        className="absolute inset-0 z-0"
+        style={{
+          backgroundImage: "url('/admin-bg.jpg')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          backgroundAttachment: 'fixed',
+        }}
+      />
+      <div
+        className="absolute inset-0 z-0"
+        style={{
+          background: 'linear-gradient(135deg, rgba(8,27,58,0.92), rgba(6,15,35,0.88))',
+        }}
+      />
+
       <AdminSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+      <div className="relative z-10 flex flex-col flex-1 min-w-0 overflow-hidden">
         <AdminHeader open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
-        <main className="flex-1 overflow-y-auto p-6" style={{ background: '#060F23' }}>
+        <main className="flex-1 overflow-y-auto p-6">
           <AnimatePresence mode="wait">
             <motion.div
               key={usePathname()}
