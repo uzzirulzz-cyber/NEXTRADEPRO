@@ -1,0 +1,738 @@
+     1→'use client';
+     2→
+     3→import React, { useState, Suspense } from 'react';
+     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→import {
+     6→  Mail,
+     7→  Lock,
+     8→  Loader2,
+     9→  Eye,
+    10→  EyeOff,
+    11→  User,
+    12→  Phone,
+    13→  Ticket,
+    14→  Shield,
+    15→  Zap,
+    16→  TrendingUp,
+    17→  Smartphone,
+    18→  ArrowLeft,
+    19→  CheckCircle,
+    20→} from 'lucide-react';
+    21→import { useRouter, useSearchParams } from 'next/navigation';
+    22→import Image from 'next/image';
+    23→
+    24→/* ───────────────────────── ticker data ───────────────────────── */
+    25→const TICKER_ITEMS = [
+    26→  { name: 'JazzCash', status: 'Online' },
+    27→  { name: 'Easypaisa', status: 'Online' },
+    28→  { name: 'Bank Transfer', status: 'Online' },
+    29→  { name: 'Visa', status: 'Online' },
+    30→  { name: 'Mastercard', status: 'Online' },
+    31→  { name: 'Secure Pay', status: 'Online' },
+    32→];
+    33→
+    34→/* ───────────────────────── floating orbs ─────────────────────── */
+    35→function FloatingOrbs() {
+    36→  const orbs = [
+    37→    { size: 420, color: 'rgba(15,95,255,0.04)', top: '5%', left: '-8%', dur: 18 },
+    38→    { size: 320, color: 'rgba(56,189,248,0.03)', top: '55%', right: '-6%', dur: 22 },
+    39→    { size: 260, color: 'rgba(255,215,0,0.02)', bottom: '8%', left: '20%', dur: 25 },
+    40→    { size: 180, color: 'rgba(15,95,255,0.04)', top: '30%', right: '15%', dur: 20 },
+    41→  ] as const;
+    42→
+    43→  return (
+    44→    <>
+    45→      {orbs.map((o, i) => (
+    46→        <motion.div
+    47→          key={i}
+    48→          className="pointer-events-none absolute rounded-full"
+    49→          style={{
+    50→            width: o.size,
+    51→            height: o.size,
+    52→            background: o.color,
+    53→            filter: 'blur(80px)',
+    54→            ...(o.top !== undefined ? { top: o.top } : { bottom: o.bottom }),
+    55→            ...(o.left !== undefined ? { left: o.left } : { right: o.right }),
+    56→          }}
+    57→          animate={{ y: [0, 20, -15, 0], x: [0, 12, -8, 0] }}
+    58→          transition={{ duration: o.dur, repeat: Infinity, ease: 'easeInOut' }}
+    59→        />
+    60→      ))}
+    61→    </>
+    62→  );
+    63→}
+    64→
+    65→/* ───────────────────────── ticker tape ───────────────────────── */
+    66→function TickerTape() {
+    67→  const items = [...TICKER_ITEMS, ...TICKER_ITEMS];
+    68→  return (
+    69→    <div className="w-full overflow-hidden border-b border-[rgba(192,199,209,0.08)] bg-[rgba(8,27,58,0.4)]">
+    70→      <motion.div
+    71→        className="flex gap-8 whitespace-nowrap py-2"
+    72→        animate={{ x: ['0%', '-50%'] }}
+    73→        transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
+    74→      >
+    75→        {items.map((item, i) => (
+    76→          <div key={i} className="flex items-center gap-2 px-2 text-xs">
+    77→            <span className="text-[#7A8599]">{item.name}</span>
+    78→            <span className="flex items-center gap-1 text-[#00E676]">
+    79→              <CheckCircle className="h-3 w-3" />
+    80→              {item.status}
+    81→            </span>
+    82→          </div>
+    83→        ))}
+    84→      </motion.div>
+    85→    </div>
+    86→  );
+    87→}
+    88→
+    89→/* ───────────────────────── left panel ────────────────────────── */
+    90→function LeftPanel() {
+    91→  const features = [
+    92→    { icon: Shield, label: 'Bank-Grade Security', color: '#00E676' },
+    93→    { icon: Zap, label: 'Instant Transfers', color: '#FFD700' },
+    94→    { icon: TrendingUp, label: 'Real-Time Analytics', color: '#38BDF8' },
+    95→  ];
+    96→
+    97→  const stats = [
+    98→    { value: '150K+', label: 'Active Users' },
+    99→    { value: '$2.4B', label: 'Transactions' },
+   100→    { value: '99.99%', label: 'Uptime' },
+   101→  ];
+   102→
+   103→  return (
+   104→    <div className="relative hidden h-full w-[45%] flex-col justify-between overflow-hidden lg:flex">
+   105→      {/* bg image + overlay */}
+   106→      <div
+   107→        className="absolute inset-0 bg-cover bg-center"
+   108→        style={{ backgroundImage: "url('/login-bg.jpg')" }}
+   109→      />
+   110→      <div
+   111→        className="absolute inset-0"
+   112→        style={{
+   113→          background:
+   114→            'linear-gradient(180deg, rgba(8,27,58,0.82), rgba(8,27,58,0.65), rgba(8,27,58,0.88))',
+   115→        }}
+   116→      />
+   117→
+   118→      {/* content */}
+   119→      <div className="relative z-10 flex flex-col justify-between p-10">
+   120→        {/* top: logo */}
+   121→        <div className="flex items-center gap-2.5">
+   122→          <Image src="/logo.png" alt="NexTrade Pro" width={36} height={36} />
+   123→          <span className="text-lg font-semibold tracking-tight text-white">
+   124→            NexTrade <span className="text-[#FFD700]">Pro</span>
+   125→          </span>
+   126→        </div>
+   127→
+   128→        {/* middle */}
+   129→        <div className="flex flex-col gap-6">
+   130→          <div>
+   131→            <h1 className="text-4xl font-bold leading-tight text-white">
+   132→              Digital Trading
+   133→            </h1>
+   134→            <h1
+   135→              className="mt-1 text-4xl font-bold leading-tight"
+   136→              style={{
+   137→                background: 'linear-gradient(135deg, #0F5EFF, #38BDF8)',
+   138→                WebkitBackgroundClip: 'text',
+   139→                WebkitTextFillColor: 'transparent',
+   140→              }}
+   141→            >
+   142→              Made Premium
+   143→            </h1>
+   144→          </div>
+   145→
+   146→          {/* feature badges */}
+   147→          <div className="flex flex-wrap gap-3">
+   148→            {features.map((f) => (
+   149→              <div
+   150→                key={f.label}
+   151→                className="flex items-center gap-2 rounded-full border border-[rgba(192,199,209,0.12)] bg-[rgba(14,34,72,0.5)] px-4 py-2"
+   152→              >
+   153→                <f.icon className="h-4 w-4" style={{ color: f.color }} />
+   154→                <span className="text-[13px] text-[#C0C7D1]">{f.label}</span>
+   155→              </div>
+   156→            ))}
+   157→          </div>
+   158→        </div>
+   159→
+   160→        {/* bottom stats */}
+   161→        <div className="flex gap-8">
+   162→          {stats.map((s) => (
+   163→            <div key={s.label} className="flex flex-col">
+   164→              <span className="text-2xl font-bold text-white">{s.value}</span>
+   165→              <span className="mt-0.5 text-xs text-[#7A8599]">{s.label}</span>
+   166→            </div>
+   167→          ))}
+   168→        </div>
+   169→      </div>
+   170→    </div>
+   171→  );
+   172→}
+   173→
+   174→/* ───────────────────────── form input ────────────────────────── */
+   175→function FormInput({
+   176→  icon: Icon,
+   177→  label,
+   178→  type = 'text',
+   179→  placeholder,
+   180→  value,
+   181→  onChange,
+   182→  error,
+   183→  rightElement,
+   184→}: {
+   185→  icon: React.ElementType;
+   186→  label: string;
+   187→  type?: string;
+   188→  placeholder?: string;
+   189→  value: string;
+   190→  onChange: (v: string) => void;
+   191→  error?: string;
+   192→  rightElement?: React.ReactNode;
+   193→}) {
+   194→  return (
+   195→    <div className="flex flex-col gap-1.5">
+   196→      <label className="text-[13px] text-[#C0C7D1]">{label}</label>
+   197→      <div className="relative">
+   198→        <Icon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7A8599]" />
+   199→        <input
+   200→          type={type}
+   201→          placeholder={placeholder}
+   202→          value={value}
+   203→          onChange={(e) => onChange(e.target.value)}
+   204→          className="w-full rounded-lg border bg-[rgba(8,27,58,0.6)] py-2.5 pl-10 pr-10 text-sm text-white placeholder-[#7A8599] outline-none transition-all duration-200 focus:border-[#0F5EFF] focus:shadow-[0_0_0_3px_rgba(15,95,255,0.12)]"
+   205→          style={{
+   206→            borderColor: error ? '#FF4757' : 'rgba(192,199,209,0.12)',
+   207→          }}
+   208→        />
+   209→        {rightElement && (
+   210→          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+   211→            {rightElement}
+   212→          </div>
+   213→        )}
+   214→      </div>
+   215→      {error && <p className="text-xs text-[#FF4757]">{error}</p>}
+   216→    </div>
+   217→  );
+   218→}
+   219→
+   220→/* ───────────────────────── social buttons ────────────────────── */
+   221→function SocialButtons() {
+   222→  return (
+   223→    <div className="flex gap-3">
+   224→      <button
+   225→        type="button"
+   226→        className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-[rgba(192,199,209,0.12)] bg-[rgba(8,27,58,0.6)] py-2.5 text-sm text-[#C0C7D1] transition-colors hover:border-[rgba(192,199,209,0.25)] hover:text-white"
+   227→      >
+   228→        <svg className="h-4 w-4" viewBox="0 0 24 24">
+   229→          <path
+   230→            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
+   231→            fill="#4285F4"
+   232→          />
+   233→          <path
+   234→            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+   235→            fill="#34A853"
+   236→          />
+   237→          <path
+   238→            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+   239→            fill="#FBBC05"
+   240→          />
+   241→          <path
+   242→            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+   243→            fill="#EA4335"
+   244→          />
+   245→        </svg>
+   246→        Google
+   247→      </button>
+   248→      <button
+   249→        type="button"
+   250→        className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-[rgba(192,199,209,0.12)] bg-[rgba(8,27,58,0.6)] py-2.5 text-sm text-[#C0C7D1] transition-colors hover:border-[rgba(192,199,209,0.25)] hover:text-white"
+   251→      >
+   252→        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+   253→          <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.32 2.32-2.11 4.45-3.74 4.25z" />
+   254→        </svg>
+   255→        Apple
+   256→      </button>
+   257→    </div>
+   258→  );
+   259→}
+   260→
+   261→/* ───────────────────────── main sign-in content ──────────────── */
+   262→function SignInContent() {
+   263→  const router = useRouter();
+   264→  const searchParams = useSearchParams();
+   265→
+   266→  const tabParam = searchParams.get('tab');
+   267→  const [mode, setMode] = useState<'signin' | 'register'>(
+   268→    tabParam === 'register' ? 'register' : 'signin'
+   269→  );
+   270→  const [loading, setLoading] = useState(false);
+   271→  const [error, setError] = useState('');
+   272→
+   273→  // signin fields
+   274→  const [email, setEmail] = useState('');
+   275→  const [password, setPassword] = useState('');
+   276→  const [showPassword, setShowPassword] = useState(false);
+   277→
+   278→  // register fields
+   279→  const [regName, setRegName] = useState('');
+   280→  const [regEmail, setRegEmail] = useState('');
+   281→  const [regPhone, setRegPhone] = useState('');
+   282→  const [regPassword, setRegPassword] = useState('');
+   283→  const [regConfirm, setRegConfirm] = useState('');
+   284→  const [regInviteCode, setRegInviteCode] = useState(() => {
+   285→    if (typeof window === 'undefined') return '';
+   286→    return localStorage.getItem('invitationCode') || '';
+   287→  });
+   288→  const [showRegPassword, setShowRegPassword] = useState(false);
+   289→  const [showRegConfirm, setShowRegConfirm] = useState(false);
+   290→
+   291→  // field errors
+   292→  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+   293→
+   294→  function clearErrors() {
+   295→    setError('');
+   296→    setFieldErrors({});
+   297→  }
+   298→
+   299→  function validateSignIn(): boolean {
+   300→    const errs: Record<string, string> = {};
+   301→    if (!email.trim()) errs.email = 'Email is required';
+   302→    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errs.email = 'Invalid email address';
+   303→    if (!password) errs.password = 'Password is required';
+   304→    setFieldErrors(errs);
+   305→    return Object.keys(errs).length === 0;
+   306→  }
+   307→
+   308→  function validateRegister(): boolean {
+   309→    const errs: Record<string, string> = {};
+   310→    if (!regName.trim()) errs.name = 'Full name is required';
+   311→    if (!regEmail.trim()) errs.email = 'Email is required';
+   312→    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regEmail.trim())) errs.email = 'Invalid email address';
+   313→    if (!regPhone.trim()) errs.phone = 'Phone number is required';
+   314→    if (!regPassword) errs.password = 'Password is required';
+   315→    else if (regPassword.length < 6) errs.password = 'Password must be at least 6 characters';
+   316→    if (regPassword !== regConfirm) errs.confirm = 'Passwords do not match';
+   317→    setFieldErrors(errs);
+   318→    return Object.keys(errs).length === 0;
+   319→  }
+   320→
+   321→  async function handleSignIn(e: React.FormEvent) {
+   322→    e.preventDefault();
+   323→    clearErrors();
+   324→    if (!validateSignIn()) return;
+   325→    setLoading(true);
+   326→    try {
+   327→      const res = await fetch('/api/auth/login', {
+   328→        method: 'POST',
+   329→        headers: { 'Content-Type': 'application/json' },
+   330→        body: JSON.stringify({ email: email.trim(), password }),
+   331→      });
+   332→      const data = await res.json();
+   333→      if (!res.ok) {
+   334→        setError(data.error || 'Login failed');
+   335→        return;
+   336→      }
+   337→      localStorage.setItem('nextrade_token', data.token);
+   338→      localStorage.setItem('nextrade_user', JSON.stringify(data.user));
+   339→      router.push('/');
+   340→    } catch (_err) {
+   341→      setError('Network error. Please check your connection.');
+   342→    } finally {
+   343→      setLoading(false);
+   344→    }
+   345→  }
+   346→
+   347→  async function handleRegister(e: React.FormEvent) {
+   348→    e.preventDefault();
+   349→    clearErrors();
+   350→    if (!validateRegister()) return;
+   351→    setLoading(true);
+   352→    try {
+   353→      const res = await fetch('/api/auth/register', {
+   354→        method: 'POST',
+   355→        headers: { 'Content-Type': 'application/json' },
+   356→        body: JSON.stringify({
+   357→          name: regName.trim(),
+   358→          email: regEmail.trim(),
+   359→          phone: regPhone.trim(),
+   360→          password: regPassword,
+   361→          invitationCode: regInviteCode.trim(),
+   362→        }),
+   363→      });
+   364→      const data = await res.json();
+   365→      if (!res.ok) {
+   366→        setError(data.error || 'Registration failed');
+   367→        return;
+   368→      }
+   369→      localStorage.setItem('nextrade_token', data.token);
+   370→      localStorage.setItem('nextrade_user', JSON.stringify(data.user));
+   371→      router.push('/');
+   372→    } catch (_err) {
+   373→      setError('Network error. Please check your connection.');
+   374→    } finally {
+   375→      setLoading(false);
+   376→    }
+   377→  }
+   378→
+   379→  const switchMode = (m: 'signin' | 'register') => {
+   380→    setMode(m);
+   381→    clearErrors();
+   382→  };
+   383→
+   384→  return (
+   385→    <div className="relative flex min-h-screen bg-[#081B3A]">
+   386→      <FloatingOrbs />
+   387→
+   388→      {/* ─── left panel (desktop) ─── */}
+   389→      <LeftPanel />
+   390→
+   391→      {/* ─── right panel (form) ─── */}
+   392→      <div className="relative z-10 flex w-full flex-col lg:w-[55%]">
+   393→        {/* ticker tape */}
+   394→        <TickerTape />
+   395→
+   396→        {/* mobile logo + back */}
+   397→        <div className="flex items-center gap-2.5 px-6 pt-6 lg:hidden">
+   398→          <Image src="/logo.png" alt="NexTrade Pro" width={32} height={32} />
+   399→          <span className="text-base font-semibold tracking-tight text-white">
+   400→            NexTrade <span className="text-[#FFD700]">Pro</span>
+   401→          </span>
+   402→        </div>
+   403→
+   404→        {/* form container */}
+   405→        <div className="flex flex-1 items-center justify-center px-4 py-8 sm:px-6 lg:px-12">
+   406→          <motion.div
+   407→            initial={{ opacity: 0, y: 20 }}
+   408→            animate={{ opacity: 1, y: 0 }}
+   409→            transition={{ duration: 0.5, ease: 'easeOut' }}
+   410→            className="w-full max-w-[420px]"
+   411→          >
+   412→            {/* back link (desktop) */}
+   413→            <button
+   414→              onClick={() => router.push('/')}
+   415→              className="mb-6 hidden items-center gap-1.5 text-sm text-[#7A8599] transition-colors hover:text-[#38BDF8] lg:flex"
+   416→            >
+   417→              <ArrowLeft className="h-4 w-4" />
+   418→              Back to home
+   419→            </button>
+   420→
+   421→            {/* card */}
+   422→            <div
+   423→              className="rounded-2xl border p-6 sm:p-8"
+   424→              style={{
+   425→                background: 'rgba(14, 34, 72, 0.6)',
+   426→                backdropFilter: 'blur(20px)',
+   427→                WebkitBackdropFilter: 'blur(20px)',
+   428→                borderColor: 'rgba(192, 199, 209, 0.15)',
+   429→              }}
+   430→            >
+   431→              {/* mobile heading */}
+   432→              <div className="mb-6 text-center lg:hidden">
+   433→                <h1 className="text-2xl font-bold text-white">Welcome</h1>
+   434→                <p className="mt-1 text-sm text-[#7A8599]">Sign in to NexTrade Pro</p>
+   435→              </div>
+   436→
+   437→              {/* tab switcher */}
+   438→              <div className="mb-6 flex rounded-lg border border-[rgba(192,199,209,0.12)] bg-[rgba(8,27,58,0.6)] p-1">
+   439→                {(['signin', 'register'] as const).map((tab) => (
+   440→                  <button
+   441→                    key={tab}
+   442→                    type="button"
+   443→                    onClick={() => switchMode(tab)}
+   444→                    className="relative flex-1 rounded-md py-2.5 text-sm font-medium transition-all duration-200"
+   445→                    style={{
+   446→                      color: mode === tab ? '#FFFFFF' : '#7A8599',
+   447→                      background: mode === tab ? 'rgba(15,95,255,0.1)' : 'transparent',
+   448→                      borderBottom:
+   449→                        mode === tab ? '2px solid #0F5EFF' : '2px solid transparent',
+   450→                      borderBottomLeftRadius: mode === tab ? 0 : undefined,
+   451→                      borderBottomRightRadius: mode === tab ? 0 : undefined,
+   452→                    }}
+   453→                  >
+   454→                    {tab === 'signin' ? 'Sign In' : 'Create Account'}
+   455→                  </button>
+   456→                ))}
+   457→              </div>
+   458→
+   459→              {/* global error */}
+   460→              <AnimatePresence>
+   461→                {error && (
+   462→                  <motion.div
+   463→                    initial={{ opacity: 0, height: 0 }}
+   464→                    animate={{ opacity: 1, height: 'auto' }}
+   465→                    exit={{ opacity: 0, height: 0 }}
+   466→                    className="mb-4 rounded-lg border border-[rgba(255,71,87,0.3)] bg-[rgba(255,71,87,0.08)] px-4 py-2.5 text-sm text-[#FF4757]"
+   467→                  >
+   468→                    {error}
+   469→                  </motion.div>
+   470→                )}
+   471→              </AnimatePresence>
+   472→
+   473→              <AnimatePresence mode="wait">
+   474→                {/* ═══════════ SIGN IN FORM ═══════════ */}
+   475→                {mode === 'signin' && (
+   476→                  <motion.form
+   477→                    key="signin"
+   478→                    initial={{ opacity: 0, x: -16 }}
+   479→                    animate={{ opacity: 1, x: 0 }}
+   480→                    exit={{ opacity: 0, x: 16 }}
+   481→                    transition={{ duration: 0.25 }}
+   482→                    onSubmit={handleSignIn}
+   483→                    className="flex flex-col gap-4"
+   484→                  >
+   485→                    <FormInput
+   486→                      icon={Mail}
+   487→                      label="Email Address"
+   488→                      type="email"
+   489→                      placeholder="you@example.com"
+   490→                      value={email}
+   491→                      onChange={setEmail}
+   492→                      error={fieldErrors.email}
+   493→                    />
+   494→
+   495→                    <FormInput
+   496→                      icon={Lock}
+   497→                      label="Password"
+   498→                      type={showPassword ? 'text' : 'password'}
+   499→                      placeholder="Enter your password"
+   500→                      value={password}
+   501→                      onChange={setPassword}
+   502→                      error={fieldErrors.password}
+   503→                      rightElement={
+   504→                        <button
+   505→                          type="button"
+   506→                          onClick={() => setShowPassword(!showPassword)}
+   507→                          className="text-[#7A8599] transition-colors hover:text-[#C0C7D1]"
+   508→                        >
+   509→                          {showPassword ? (
+   510→                            <EyeOff className="h-4 w-4" />
+   511→                          ) : (
+   512→                            <Eye className="h-4 w-4" />
+   513→                          )}
+   514→                        </button>
+   515→                      }
+   516→                    />
+   517→
+   518→                    <div className="flex items-center justify-end">
+   519→                      <button
+   520→                        type="button"
+   521→                        className="text-xs text-[#38BDF8] transition-colors hover:underline"
+   522→                      >
+   523→                        Forgot password?
+   524→                      </button>
+   525→                    </div>
+   526→
+   527→                    <motion.button
+   528→                      type="submit"
+   529→                      disabled={loading}
+   530→                      whileHover={{ scale: 1.01 }}
+   531→                      whileTap={{ scale: 0.98 }}
+   532→                      className="relative flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white transition-shadow duration-300 disabled:opacity-60"
+   533→                      style={{
+   534→                        background: 'linear-gradient(135deg, #0F5EFF, #38BDF8)',
+   535→                        boxShadow: '0 0 20px rgba(15,95,255,0.2)',
+   536→                      }}
+   537→                    >
+   538→                      {loading ? (
+   539→                        <Loader2 className="h-4 w-4 animate-spin" />
+   540→                      ) : (
+   541→                        'Sign In'
+   542→                      )}
+   543→                    </motion.button>
+   544→
+   545→                    <div className="relative flex items-center gap-3 py-1">
+   546→                      <div className="h-px flex-1 bg-[rgba(192,199,209,0.12)]" />
+   547→                      <span className="text-xs text-[#7A8599]">or continue with</span>
+   548→                      <div className="h-px flex-1 bg-[rgba(192,199,209,0.12)]" />
+   549→                    </div>
+   550→
+   551→                    <SocialButtons />
+   552→
+   553→                    <p className="mt-2 text-center text-xs text-[#7A8599]">
+   554→                      Don&apos;t have an account?{' '}
+   555→                      <button
+   556→                        type="button"
+   557→                        onClick={() => switchMode('register')}
+   558→                        className="text-[#38BDF8] transition-colors hover:underline"
+   559→                      >
+   560→                        Create Account
+   561→                      </button>
+   562→                    </p>
+   563→                  </motion.form>
+   564→                )}
+   565→
+   566→                {/* ═══════════ REGISTER FORM ═══════════ */}
+   567→                {mode === 'register' && (
+   568→                  <motion.form
+   569→                    key="register"
+   570→                    initial={{ opacity: 0, x: 16 }}
+   571→                    animate={{ opacity: 1, x: 0 }}
+   572→                    exit={{ opacity: 0, x: -16 }}
+   573→                    transition={{ duration: 0.25 }}
+   574→                    onSubmit={handleRegister}
+   575→                    className="flex flex-col gap-4"
+   576→                  >
+   577→                    <FormInput
+   578→                      icon={User}
+   579→                      label="Full Name"
+   580→                      type="text"
+   581→                      placeholder="John Doe"
+   582→                      value={regName}
+   583→                      onChange={setRegName}
+   584→                      error={fieldErrors.name}
+   585→                    />
+   586→
+   587→                    <FormInput
+   588→                      icon={Mail}
+   589→                      label="Email Address"
+   590→                      type="email"
+   591→                      placeholder="you@example.com"
+   592→                      value={regEmail}
+   593→                      onChange={setRegEmail}
+   594→                      error={fieldErrors.email}
+   595→                    />
+   596→
+   597→                    <FormInput
+   598→                      icon={Phone}
+   599→                      label="Phone Number"
+   600→                      type="tel"
+   601→                      placeholder="+1 (XXX) XXX-XXXX"
+   602→                      value={regPhone}
+   603→                      onChange={setRegPhone}
+   604→                      error={fieldErrors.phone}
+   605→                    />
+   606→
+   607→                    <FormInput
+   608→                      icon={Lock}
+   609→                      label="Password"
+   610→                      type={showRegPassword ? 'text' : 'password'}
+   611→                      placeholder="Min. 6 characters"
+   612→                      value={regPassword}
+   613→                      onChange={setRegPassword}
+   614→                      error={fieldErrors.password}
+   615→                      rightElement={
+   616→                        <button
+   617→                          type="button"
+   618→                          onClick={() => setShowRegPassword(!showRegPassword)}
+   619→                          className="text-[#7A8599] transition-colors hover:text-[#C0C7D1]"
+   620→                        >
+   621→                          {showRegPassword ? (
+   622→                            <EyeOff className="h-4 w-4" />
+   623→                          ) : (
+   624→                            <Eye className="h-4 w-4" />
+   625→                          )}
+   626→                        </button>
+   627→                      }
+   628→                    />
+   629→
+   630→                    <FormInput
+   631→                      icon={Lock}
+   632→                      label="Confirm Password"
+   633→                      type={showRegConfirm ? 'text' : 'password'}
+   634→                      placeholder="Re-enter password"
+   635→                      value={regConfirm}
+   636→                      onChange={setRegConfirm}
+   637→                      error={fieldErrors.confirm}
+   638→                      rightElement={
+   639→                        <button
+   640→                          type="button"
+   641→                          onClick={() => setShowRegConfirm(!showRegConfirm)}
+   642→                          className="text-[#7A8599] transition-colors hover:text-[#C0C7D1]"
+   643→                        >
+   644→                          {showRegConfirm ? (
+   645→                            <EyeOff className="h-4 w-4" />
+   646→                          ) : (
+   647→                            <Eye className="h-4 w-4" />
+   648→                          )}
+   649→                        </button>
+   650→                      }
+   651→                    />
+   652→
+   653→                    <FormInput
+   654→                      icon={Ticket}
+   655→                      label="Invitation Code"
+   656→                      type="text"
+   657→                      placeholder="Optional — enter code if you have one"
+   658→                      value={regInviteCode}
+   659→                      onChange={setRegInviteCode}
+   660→                    />
+   661→
+   662→                    <motion.button
+   663→                      type="submit"
+   664→                      disabled={loading}
+   665→                      whileHover={{ scale: 1.01 }}
+   666→                      whileTap={{ scale: 0.98 }}
+   667→                      className="relative mt-1 flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white transition-shadow duration-300 disabled:opacity-60"
+   668→                      style={{
+   669→                        background: 'linear-gradient(135deg, #0F5EFF, #38BDF8)',
+   670→                        boxShadow: '0 0 20px rgba(15,95,255,0.2)',
+   671→                      }}
+   672→                    >
+   673→                      {loading ? (
+   674→                        <Loader2 className="h-4 w-4 animate-spin" />
+   675→                      ) : (
+   676→                        'Create Account'
+   677→                      )}
+   678→                    </motion.button>
+   679→
+   680→                    <div className="relative flex items-center gap-3 py-1">
+   681→                      <div className="h-px flex-1 bg-[rgba(192,199,209,0.12)]" />
+   682→                      <span className="text-xs text-[#7A8599]">or continue with</span>
+   683→                      <div className="h-px flex-1 bg-[rgba(192,199,209,0.12)]" />
+   684→                    </div>
+   685→
+   686→                    <SocialButtons />
+   687→
+   688→                    <p className="mt-2 text-center text-xs text-[#7A8599]">
+   689→                      Already have an account?{' '}
+   690→                      <button
+   691→                        type="button"
+   692→                        onClick={() => switchMode('signin')}
+   693→                        className="text-[#38BDF8] transition-colors hover:underline"
+   694→                      >
+   695→                        Sign In
+   696→                      </button>
+   697→                    </p>
+   698→                  </motion.form>
+   699→                )}
+   700→              </AnimatePresence>
+   701→            </div>
+   702→
+   703→            {/* mobile bottom trust badges */}
+   704→            <div className="mt-6 flex flex-wrap justify-center gap-4 lg:hidden">
+   705→              <div className="flex items-center gap-1.5 text-xs text-[#7A8599]">
+   706→                <Smartphone className="h-3.5 w-3.5 text-[#38BDF8]" />
+   707→                Mobile Ready
+   708→              </div>
+   709→              <div className="flex items-center gap-1.5 text-xs text-[#7A8599]">
+   710→                <Shield className="h-3.5 w-3.5 text-[#00E676]" />
+   711→                Secured
+   712→              </div>
+   713→              <div className="flex items-center gap-1.5 text-xs text-[#7A8599]">
+   714→                <Zap className="h-3.5 w-3.5 text-[#FFD700]" />
+   715→                Fast
+   716→              </div>
+   717→            </div>
+   718→          </motion.div>
+   719→        </div>
+   720→      </div>
+   721→    </div>
+   722→  );
+   723→}
+   724→
+   725→/* ───────────────────────── page export ───────────────────────── */
+   726→export default function SignInPage() {
+   727→  return (
+   728→    <Suspense
+   729→      fallback={
+   730→        <div className="flex min-h-screen items-center justify-center bg-[#081B3A]">
+   731→          <Loader2 className="h-8 w-8 animate-spin text-[#0F5EFF]" />
+   732→        </div>
+   733→      }
+   734→    >
+   735→      <SignInContent />
+   736→    </Suspense>
+   737→  );
+   738→}
