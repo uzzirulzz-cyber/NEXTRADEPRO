@@ -1,21 +1,31 @@
 ---
-Task ID: 1
+Task ID: 2
 Agent: Main Agent
-Task: Fix homepage, sign-in/sign-up, admin, and indexing for NexTrade Pro
+Task: Full frontend & backend integration fix for Brock Exchange platform (nextradepro.top)
 
 Work Log:
-- Explored full codebase structure and identified all routing/architecture issues
-- Fixed root page.tsx: Added LoginPage and RegisterPage rendering for unauthenticated SPA navigation, added re-hydration useEffect to handle auth state from standalone /signin page
-- Fixed RegisterPage.tsx: Complete rewrite with separate firstName/lastName fields, global phone with 25 country codes, proper validation, auto-login after registration via setAuth
-- Fixed register API: Now handles both { firstName, lastName } and legacy { name } formats for backward compatibility
-- Fixed store hydration: SUB_AGENT now correctly routes to ADMIN_USERS instead of DASHBOARD
-- Fixed User model: Added firstName and lastName fields to schema
-- Fixed signin/page.tsx: Corrected Mexico country code from +55 (Brazil) to +52
-- Fixed LoginPage.tsx: Updated glow orb color from old #3b82f6 to NexTrade #0F5EFF
-- Verified build compiles successfully with all 37 routes properly indexed
+- Analyzed entire codebase structure: 30+ pages, 20+ API routes, Zustand store, Prisma schema
+- Identified 4 API routes still using Mongoose models (trades, wallet/balance, wallet/withdraw, wallet/transactions) that would crash at runtime
+- Rewrote all 4 Mongoose-based API routes to use Prisma ORM
+- Created new /api/wallet/deposit endpoint for deposit requests
+- Created new /api/notifications endpoint with GET (list) and PATCH (mark read) handlers
+- Rewrote DashboardPage: replaced all mock wallet/trade/transaction data with real API calls to /api/wallet, /api/trades, /api/wallet/transactions
+- Rewrote TradingPage: connected trade submission to POST /api/trades with loading states, error handling, wallet balance refresh
+- Rewrote WalletPage: connected deposit to POST /api/wallet/deposit and withdrawal to POST /api/wallet/withdraw with real API calls
+- Rewrote NotificationsPage: replaced 10 hardcoded mock notifications with real API fetch from /api/notifications, real mark-as-read via PATCH
+- Rewrote ProfilePage: connected password change to POST /api/auth/change-password, updated avatar to Brock Exchange gold→cyan gradient
+- Fixed admin deposits route: replaced non-existent prisma.deposit model with Transaction type='DEPOSIT', added balance crediting on approval
+- Fixed admin withdrawals route: added proper balance handling (deduct frozen on approve, unfreeze on reject)
+- Fixed navigation: Home button in sidebar now navigates to Dashboard for authenticated users (not landing page)
+- Installed missing tailwindcss-animate dependency
+- Fixed .env DATABASE_URL to point to Neon PostgreSQL
+- Verified server compilation and page rendering (HTTP 200, 72KB HTML, API routes responding)
 
 Stage Summary:
-- All auth flows now work: SPA login/register, standalone /signin page, /reg invitation redirect
-- Navigation indexing fixed: LOGIN and REGISTER pages render correctly for unauthenticated users
-- Admin panel auth guard verified working with proper SUPER_ADMIN/SUB_AGENT role checks
-- Store hydration fixed for both initial load and cross-route navigation
+- All API routes now use Prisma (zero Mongoose imports remain in API layer)
+- All user-facing pages fetch real data from backend APIs
+- Trading flow: coin selection → trade page → API submission → balance refresh
+- Wallet flow: deposit/withdraw → pending status → admin approval → balance update
+- Navigation fully functional: all sidebar items open correct pages, coin clicks navigate to trade
+- Loading indicators and error handling on all pages
+- Server compiles and serves pages successfully

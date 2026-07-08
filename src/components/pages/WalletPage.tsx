@@ -228,15 +228,18 @@ function StyledSelect({
   value,
   onChange,
   options,
+  disabled,
 }: {
   value: string;
   onChange: (v: string) => void;
   options: readonly string[];
+  disabled?: boolean;
 }) {
   return (
     <select
-      className="trade-input appearance-none cursor-pointer"
+      className="trade-input appearance-none cursor-pointer disabled:opacity-50"
       value={value}
+      disabled={disabled}
       onChange={(e) => onChange(e.target.value)}
       style={{
         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7a8d' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
@@ -277,14 +280,19 @@ export default function WalletPage() {
   // deposit
   const [depCurrency, setDepCurrency] = useState('USDT');
   const [depNetwork, setDepNetwork] = useState('TRC20');
+  const [depAmount, setDepAmount] = useState('');
+  const [depTxHash, setDepTxHash] = useState('');
   const [copied, setCopied] = useState(false);
-  const [depSubmitted, setDepSubmitted] = useState(false);
+  const [depSubmitting, setDepSubmitting] = useState(false);
+  const [depError, setDepError] = useState('');
+  const [depSuccess, setDepSuccess] = useState('');
 
   // withdraw
   const [wdCurrency, setWdCurrency] = useState('USDT');
   const [wdAmount, setWdAmount] = useState('');
-  const [wdNetwork, setWdNetwork] = useState('TRC20');
-  const [wdAddress, setWdAddress] = useState('');
+  const [wdMethod, setWdMethod] = useState('TRC20');
+  const [wdAccountNumber, setWdAccountNumber] = useState('');
+  const [wdAccountName, setWdAccountName] = useState('');
   const [wdSubmitting, setWdSubmitting] = useState(false);
   const [wdError, setWdError] = useState('');
   const [wdSuccess, setWdSuccess] = useState('');
@@ -414,12 +422,80 @@ export default function WalletPage() {
     }
   };
 
-  const handleDepositSubmit = () => {
-    setDepSubmitted(true);
-    setTimeout(() => {
-      setDepSubmitted(false);
-      navigate(Pages.WALLET);
-    }, 2500);
+  const refreshAfterMutation = useCallback(() => {
+    fetchWallets();
+    fetchTransactions(1, 'all');
+  }, [fetchWallets, fetchTransactions]);
+
+  const resetDepositForm = () => {
+    setDepAmount('');
+    setDepTxHash('');
+    setDepError('');
+    setDepSuccess('');
+  };
+
+  const handleDepositSubmit = async () => {
+    setDepError('');
+    setDepSuccess('');
+    const amt = parseFloat(depAmount);
+    if (isNaN(amt) || amt <= 0) {
+      setDepError('Please enter a valid amount');
+      return;
+    }
+    setDepSubmitting(true);
+    try {
+      const body: Record<string, unknown> = {
+        currency: depCurrency,
+        amount: amt,
+        method: depNetwork,
+      };
+      const hash = depTxHash.trim();
+      if (hash) body.txHash = hash;
+
+      const res = await fetch('/api/wallet/deposit', {
+        method: 'POST',
+        headers: authHeaders(token),
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || data.message || 'Deposit request failed');
+
+      setDepSuccess(data.message || 'Deposit submitted successfully');
+
+      // If the server returns the new transaction, prepend it
+      if (data.transaction) {
+        const norm: Transaction = {
+          id: data.transaction._id ?? data.transaction.id ?? '',
+          type: data.transaction.type ?? 'DEPOSIT',
+          status: data.transaction.status ?? 'PENDING',
+          currency: data.transaction.currency ?? depCurrency,
+          amount: Number(data.transaction.amount) || amt,
+          fee: Number(data.transaction.fee) || 0,
+          description: data.transaction.description ?? '',
+          createdAt: data.transaction.createdAt ?? new Date().toISOString(),
+        };
+        setTransactions((prev) => [norm, ...prev]);
+        setRecentTx((prev) => [norm, ...prev].slice(0, 5));
+      }
+
+      refreshAfterMutation();
+      setTimeout(() => {
+        resetDepositForm();
+        navigate(Pages.WALLET);
+      }, 2500);
+    } catch (err) {
+      setDepError(err instanceof Error ? err.message : 'Deposit request failed');
+    } finally {
+      setDepSubmitting(false);
+    }
+  };
+
+  const resetWithdrawForm = () => {
+    setWdAmount('');
+    setWdAccountNumber('');
+    setWdAccountName('');
+    setWdError('');
+    setWdSuccess('');
   };
 
   const handleWithdraw = async () => {
@@ -430,8 +506,12 @@ export default function WalletPage() {
       setWdError('Please enter a valid amount');
       return;
     }
-    if (!wdAddress.trim()) {
-      setWdError('Please enter a withdrawal address');
+    if (!wdAccountNumber.trim()) {
+      setWdError('Please enter an account number');
+      return;
+    }
+    if (!wdAccountName.trim()) {
+      setWdError('Please enter an account name');
       return;
     }
     setWdSubmitting(true);
@@ -442,14 +522,37 @@ export default function WalletPage() {
         body: JSON.stringify({
           currency: wdCurrency,
           amount: amt,
-          address: wdAddress.trim(),
+          method: wdMethod,
+          accountNumber: wdAccountNumber.trim(),
+          accountName: wdAccountName.trim(),
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Withdrawal request failed');
+      if (!res.ok) throw new Error(data.error || data.message || 'Withdrawal request failed');
+
       setWdSuccess(data.message || 'Withdrawal submitted successfully');
-      fetchWallets();
-      setTimeout(() => navigate(Pages.WALLET), 2000);
+
+      // If the server returns the new transaction, prepend it
+      if (data.transaction) {
+        const norm: Transaction = {
+          id: data.transaction._id ?? data.transaction.id ?? '',
+          type: data.transaction.type ?? 'WITHDRAW',
+          status: data.transaction.status ?? 'PENDING',
+          currency: data.transaction.currency ?? wdCurrency,
+          amount: Number(data.transaction.amount) || amt,
+          fee: Number(data.transaction.fee) || 0,
+          description: data.transaction.description ?? '',
+          createdAt: data.transaction.createdAt ?? new Date().toISOString(),
+        };
+        setTransactions((prev) => [norm, ...prev]);
+        setRecentTx((prev) => [norm, ...prev].slice(0, 5));
+      }
+
+      refreshAfterMutation();
+      setTimeout(() => {
+        resetWithdrawForm();
+        navigate(Pages.WALLET);
+      }, 2500);
     } catch (err) {
       setWdError(err instanceof Error ? err.message : 'Withdrawal failed');
     } finally {
@@ -486,7 +589,7 @@ export default function WalletPage() {
         </h2>
       </div>
 
-      {depSubmitted ? (
+      {depSuccess ? (
         <div className="glass-card p-8 text-center space-y-4">
           <div
             className="mx-auto w-16 h-16 rounded-full flex items-center justify-center"
@@ -498,8 +601,10 @@ export default function WalletPage() {
             Deposit Request Submitted
           </h3>
           <p style={{ color: 'var(--text-secondary)' }}>
-            Your deposit is being processed. Funds will appear in your wallet once confirmed on the
-            network.
+            {depSuccess}
+          </p>
+          <p style={{ color: 'var(--text-muted)' }}>
+            Funds will appear in your wallet once confirmed on the network.
           </p>
         </div>
       ) : (
@@ -516,11 +621,12 @@ export default function WalletPage() {
                   setCopied(false);
                 }}
                 options={CURRENCIES}
+                disabled={depSubmitting}
               />
             </div>
             <div>
               <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
-                Network
+                Network / Method
               </label>
               <StyledSelect
                 value={depNetwork}
@@ -529,8 +635,26 @@ export default function WalletPage() {
                   setCopied(false);
                 }}
                 options={NETWORKS}
+                disabled={depSubmitting}
               />
             </div>
+          </div>
+
+          {/* Amount */}
+          <div>
+            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
+              Amount
+            </label>
+            <input
+              type="number"
+              className="trade-input"
+              placeholder="0.00"
+              value={depAmount}
+              onChange={(e) => setDepAmount(e.target.value)}
+              min="0"
+              step="any"
+              disabled={depSubmitting}
+            />
           </div>
 
           {/* Deposit address */}
@@ -584,8 +708,47 @@ export default function WalletPage() {
             </div>
           </div>
 
-          <button onClick={handleDepositSubmit} className="btn-gold w-full !py-3 text-base">
-            I Have Sent the Funds
+          {/* Optional Tx Hash */}
+          <div>
+            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
+              Transaction Hash <span style={{ color: 'var(--text-muted)' }}>(optional)</span>
+            </label>
+            <input
+              type="text"
+              className="trade-input font-mono text-xs"
+              placeholder="Paste your transaction hash here..."
+              value={depTxHash}
+              onChange={(e) => setDepTxHash(e.target.value)}
+              disabled={depSubmitting}
+            />
+          </div>
+
+          {/* Error message */}
+          {depError && (
+            <div
+              className="flex items-center gap-2 p-3 rounded-xl text-sm"
+              style={{
+                background: 'rgba(255, 61, 87, 0.1)',
+                color: 'var(--accent-red)',
+                border: '1px solid rgba(255, 61, 87, 0.2)',
+              }}
+            >
+              <AlertCircle size={16} /> {depError}
+            </div>
+          )}
+
+          <button
+            onClick={handleDepositSubmit}
+            disabled={depSubmitting}
+            className="btn-gold w-full !py-3 text-base flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {depSubmitting ? (
+              <>
+                <Loader2 size={18} className="animate-spin" /> Processing...
+              </>
+            ) : (
+              'I Have Sent the Funds'
+            )}
           </button>
         </div>
       )}
@@ -616,13 +779,13 @@ export default function WalletPage() {
             <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
               Currency
             </label>
-            <StyledSelect value={wdCurrency} onChange={setWdCurrency} options={CURRENCIES} />
+            <StyledSelect value={wdCurrency} onChange={setWdCurrency} options={CURRENCIES} disabled={wdSubmitting} />
           </div>
           <div>
             <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
-              Network
+              Method / Network
             </label>
-            <StyledSelect value={wdNetwork} onChange={setWdNetwork} options={NETWORKS} />
+            <StyledSelect value={wdMethod} onChange={setWdMethod} options={NETWORKS} disabled={wdSubmitting} />
           </div>
         </div>
 
@@ -640,6 +803,7 @@ export default function WalletPage() {
                 border: 'none',
                 cursor: 'pointer',
               }}
+              disabled={wdSubmitting}
             >
               Available: {formatAmount(wdAvailable, wdCurrency)} {wdCurrency}
             </button>
@@ -652,19 +816,35 @@ export default function WalletPage() {
             onChange={(e) => setWdAmount(e.target.value)}
             min="0"
             step="any"
+            disabled={wdSubmitting}
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
-            Withdrawal Address
+            Account Number
+          </label>
+          <input
+            type="text"
+            className="trade-input font-mono text-sm"
+            placeholder="Enter your account number or wallet address"
+            value={wdAccountNumber}
+            onChange={(e) => setWdAccountNumber(e.target.value)}
+            disabled={wdSubmitting}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
+            Account Name
           </label>
           <input
             type="text"
             className="trade-input"
-            placeholder="Enter withdrawal address"
-            value={wdAddress}
-            onChange={(e) => setWdAddress(e.target.value)}
+            placeholder="Enter account holder name"
+            value={wdAccountName}
+            onChange={(e) => setWdAccountName(e.target.value)}
+            disabled={wdSubmitting}
           />
         </div>
 
@@ -833,14 +1013,14 @@ export default function WalletPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => fetchTransactions(txPage.page - 1, txFilter)}
-                    disabled={txPage.page <= 1}
+                    disabled={txPage.page <= 1 || txLoading}
                     className="btn-secondary !py-1.5 !px-3 disabled:opacity-30"
                   >
                     <ChevronLeft size={16} />
                   </button>
                   <button
                     onClick={() => fetchTransactions(txPage.page + 1, txFilter)}
-                    disabled={txPage.page >= txPage.totalPages}
+                    disabled={txPage.page >= txPage.totalPages || txLoading}
                     className="btn-secondary !py-1.5 !px-3 disabled:opacity-30"
                   >
                     <ChevronRight size={16} />

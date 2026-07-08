@@ -1,19 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticate } from '@/lib/rbac';
-import Wallet from '@/models/Wallet';
-import Trade from '@/models/Trade';
-import Transaction from '@/models/Transaction';
+import prisma from '@/lib/db';
 
 const VALID_SIDES = ['BUY', 'SELL'];
 const VALID_TYPES = ['MARKET', 'LIMIT'];
 const VALID_STATUSES = ['OPEN', 'CLOSED', 'CANCELLED', 'LIQUIDATED'];
-
-interface BalanceEntry {
-  currency: string;
-  amount: number;
-  frozen: number;
-}
 
 // POST /api/trades — place a new trade
 export async function POST(request: NextRequest) {
@@ -63,8 +55,11 @@ export async function POST(request: NextRequest) {
     const entryPrice = tradeType === 'LIMIT' ? price! : price && price > 0 ? price : 1; // MARKET price placeholder
     const margin = (quantity * entryPrice) / tradeLeverage;
 
-    // ── Find SPOT wallet ──
-    const wallet = await Wallet.findOne({ userId: payload.userId, type: 'SPOT' });
+    // ── Find SPOT wallet with balances ──
+    const wallet = await prisma.wallet.findFirst({
+      where: { userId: payload.userId, type: 'SPOT' },
+      include: { balances: true },
+    });
     if (!wallet) {
       return NextResponse.json({ error: 'Wallet not found. Please create a wallet first.' }, { status: 400 });
     }
@@ -73,12 +68,11 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Check & deduct margin ──
+    let balanceEntry;
     if (tradeSide === 'BUY') {
       // BUY orders: deduct margin in USDT (or quote currency)
       const quoteCurrency = 'USDT';
-      const balanceEntry = wallet.balances.find(
-        (b: BalanceEntry) => b.currency === quoteCurrency
-      ) as BalanceEntry | undefined;
+      balanceEntry = wallet.balances.find((b) => b.currency === quoteCurrency);
 
       if (!balanceEntry || balanceEntry.amount < margin) {
         const available = balanceEntry ? balanceEntry.amount : 0;
@@ -88,14 +82,14 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      balanceEntry.amount -= margin;
-      balanceEntry.frozen += margin;
+      await prisma.walletBalance.update({
+        where: { id: balanceEntry.id },
+        data: { amount: { decrement: margin }, frozen: { increment: margin } },
+      });
     } else {
       // SELL orders: check if user has enough of the base currency
       const baseCurrency = upperSymbol;
-      const balanceEntry = wallet.balances.find(
-        (b: BalanceEntry) => b.currency === baseCurrency
-      ) as BalanceEntry | undefined;
+      balanceEntry = wallet.balances.find((b) => b.currency === baseCurrency);
 
       if (!balanceEntry || balanceEntry.amount < quantity) {
         const available = balanceEntry ? balanceEntry.amount : 0;
@@ -105,60 +99,70 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      balanceEntry.amount -= quantity;
-      balanceEntry.frozen += quantity;
+      await prisma.walletBalance.update({
+        where: { id: balanceEntry.id },
+        data: { amount: { decrement: quantity }, frozen: { increment: quantity } },
+      });
     }
 
-    wallet.totalEquity = wallet.balances.reduce(
-      (sum: number, b: BalanceEntry) => sum + b.amount + b.frozen,
-      0
-    );
-    await wallet.save();
+    // ── Recalculate wallet totalEquity ──
+    const updatedBalances = await prisma.walletBalance.findMany({
+      where: { walletId: wallet.id },
+    });
+    const newTotalEquity = updatedBalances.reduce((sum, b) => sum + b.amount + b.frozen, 0);
+    await prisma.wallet.update({
+      where: { id: wallet.id },
+      data: { totalEquity: newTotalEquity },
+    });
 
     // ── Create Trade record ──
-    const trade = await Trade.create({
-      userId: payload.userId,
-      symbol: upperSymbol,
-      side: tradeSide,
-      type: tradeType,
-      status: 'OPEN',
-      entryPrice,
-      quantity,
-      leverage: tradeLeverage,
-      margin,
-      pnl: 0,
-      pnlPercent: 0,
-      stopLoss: stopLoss && stopLoss > 0 ? stopLoss : undefined,
-      takeProfit: takeProfit && takeProfit > 0 ? takeProfit : undefined,
-      agentId: payload.agentId || undefined,
+    const trade = await prisma.trade.create({
+      data: {
+        userId: payload.userId,
+        symbol: upperSymbol,
+        side: tradeSide,
+        type: tradeType,
+        status: 'OPEN',
+        entryPrice,
+        quantity,
+        leverage: tradeLeverage,
+        margin,
+        pnl: 0,
+        pnlPercent: 0,
+        stopLoss: stopLoss && stopLoss > 0 ? stopLoss : null,
+        takeProfit: takeProfit && takeProfit > 0 ? takeProfit : null,
+        agentId: payload.agentId || null,
+      },
     });
 
     // ── Create Transaction record ──
     const marginCurrency = tradeSide === 'BUY' ? 'USDT' : upperSymbol;
-    await Transaction.create({
-      userId: payload.userId,
-      type: 'TRADE',
-      status: 'COMPLETED',
-      currency: marginCurrency,
-      amount: tradeSide === 'BUY' ? margin : quantity,
-      fee: 0,
-      tradeId: trade._id.toString(),
-      description: `${tradeSide} ${quantity} ${upperSymbol} (${tradeType}, ${tradeLeverage}x) @ ${entryPrice}`,
-      metadata: {
-        symbol: upperSymbol,
-        side: tradeSide,
-        orderType: tradeType,
-        leverage: tradeLeverage,
-        entryPrice,
-        quantity,
-        margin,
+    await prisma.transaction.create({
+      data: {
+        userId: payload.userId,
+        type: 'TRADE',
+        status: 'COMPLETED',
+        currency: marginCurrency,
+        amount: tradeSide === 'BUY' ? margin : quantity,
+        fee: 0,
+        tradeId: trade.id,
+        description: `${tradeSide} ${quantity} ${upperSymbol} (${tradeType}, ${tradeLeverage}x) @ ${entryPrice}`,
+        metadata: {
+          symbol: upperSymbol,
+          side: tradeSide,
+          orderType: tradeType,
+          leverage: tradeLeverage,
+          entryPrice,
+          quantity,
+          margin,
+        },
       },
     });
 
     return NextResponse.json({
       message: 'Trade placed successfully',
       trade: {
-        _id: trade._id.toString(),
+        id: trade.id,
         userId: trade.userId,
         symbol: trade.symbol,
         side: trade.side,
@@ -193,25 +197,26 @@ export async function GET(request: NextRequest) {
     const statusFilter = searchParams.get('status') || '';
     const symbolFilter = searchParams.get('symbol') || '';
 
-    const filter: Record<string, any> = { userId: payload.userId };
+    const where: Record<string, any> = { userId: payload.userId };
     if (statusFilter && VALID_STATUSES.includes(statusFilter.toUpperCase())) {
-      filter.status = statusFilter.toUpperCase();
+      where.status = statusFilter.toUpperCase();
     }
     if (symbolFilter) {
-      filter.symbol = symbolFilter.toUpperCase();
+      where.symbol = symbolFilter.toUpperCase();
     }
 
     const [trades, total] = await Promise.all([
-      Trade.find(filter)
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .lean(),
-      Trade.countDocuments(filter),
+      prisma.trade.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.trade.count({ where }),
     ]);
 
     const enriched = trades.map((t) => ({
-      _id: t._id.toString(),
+      id: t.id,
       userId: t.userId,
       symbol: t.symbol,
       side: t.side,

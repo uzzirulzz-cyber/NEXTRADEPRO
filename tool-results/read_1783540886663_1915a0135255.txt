@@ -1,0 +1,1192 @@
+     1→'use client';
+     2→
+     3→import React, { useState, useEffect, useCallback } from 'react';
+     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→import {
+     6→  Wallet,
+     7→  ArrowDownLeft,
+     8→  ArrowUpRight,
+     9→  ArrowLeftRight,
+    10→  Bitcoin,
+    11→  CircleDollarSign,
+    12→  Copy,
+    13→  Check,
+    14→  ChevronLeft,
+    15→  ChevronRight,
+    16→  Loader2,
+    17→  AlertCircle,
+    18→  QrCode,
+    19→  Info,
+    20→  ArrowLeft,
+    21→} from 'lucide-react';
+    22→import { useStore, Pages } from '@/store/useStore';
+    23→import { Skeleton } from '@/components/ui/skeleton';
+    24→
+    25→/* ════════════════════════════════════════════════════════════
+    26→   Types
+    27→   ════════════════════════════════════════════════════════════ */
+    28→type WalletTab = 'overview' | 'spot' | 'futures' | 'earn';
+    29→type TxFilter = 'all' | 'deposits' | 'withdrawals' | 'trades';
+    30→
+    31→interface Balance {
+    32→  currency: string;
+    33→  amount: number;
+    34→  frozen: number;
+    35→}
+    36→
+    37→interface WalletData {
+    38→  id: string;
+    39→  type: string;
+    40→  totalEquity: number;
+    41→  balances: Balance[];
+    42→}
+    43→
+    44→interface Transaction {
+    45→  id: string;
+    46→  type: string;
+    47→  status: string;
+    48→  currency: string;
+    49→  amount: number;
+    50→  fee: number;
+    51→  description: string;
+    52→  createdAt: string;
+    53→}
+    54→
+    55→/* ════════════════════════════════════════════════════════════
+    56→   Constants
+    57→   ════════════════════════════════════════════════════════════ */
+    58→const CURRENCIES = ['USDT', 'BTC', 'ETH'] as const;
+    59→const NETWORKS = ['TRC20', 'ERC20', 'BEP20'] as const;
+    60→
+    61→const DEPOSIT_ADDRESSES: Record<string, string> = {
+    62→  'USDT-TRC20': 'TN2Y3R4Xk8jZBbPq7vMwEgHsLdFt5nKcAo',
+    63→  'USDT-ERC20': '0x7a3B9c2D8e1F4a6B5d0C3E7f8A9b1D2c4E5F6a7B',
+    64→  'USDT-BEP20': '0x1a2B3c4D5e6F7a8B9c0D1e2F3a4B5c6D7e8F9a0B',
+    65→  'BTC-TRC20': 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+    66→  'BTC-ERC20': 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
+    67→  'BTC-BEP20': 'bc1q42lja79elem0lh0rlvte0dptd6c4qf6z9xwlnv',
+    68→  'ETH-TRC20': '0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B',
+    69→  'ETH-ERC20': '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
+    70→  'ETH-BEP20': '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
+    71→};
+    72→
+    73→const WALLET_TABS: { key: WalletTab; label: string }[] = [
+    74→  { key: 'overview', label: 'Overview' },
+    75→  { key: 'spot', label: 'Spot' },
+    76→  { key: 'futures', label: 'Futures' },
+    77→  { key: 'earn', label: 'Earn' },
+    78→];
+    79→
+    80→const TX_FILTERS: { key: TxFilter; label: string }[] = [
+    81→  { key: 'all', label: 'All' },
+    82→  { key: 'deposits', label: 'Deposits' },
+    83→  { key: 'withdrawals', label: 'Withdrawals' },
+    84→  { key: 'trades', label: 'Trades' },
+    85→];
+    86→
+    87→const CURRENCY_META: Record<string, { bg: string; fg: string }> = {
+    88→  USDT: { bg: 'rgba(0, 210, 106, 0.15)', fg: '#00d26a' },
+    89→  BTC: { bg: 'rgba(245, 180, 0, 0.15)', fg: '#f5b400' },
+    90→  ETH: { bg: 'rgba(139, 92, 246, 0.15)', fg: '#8b5cf6' },
+    91→};
+    92→
+    93→/* ════════════════════════════════════════════════════════════
+    94→   Helpers
+    95→   ════════════════════════════════════════════════════════════ */
+    96→const formatUSD = (n: number): string =>
+    97→  `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    98→
+    99→const formatAmount = (n: number, currency: string): string => {
+   100→  if (currency === 'USDT')
+   101→    return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+   102→  return n.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+   103→};
+   104→
+   105→const formatDate = (raw: string): string => {
+   106→  try {
+   107→    const d = new Date(raw);
+   108→    const pad = (v: number) => String(v).padStart(2, '0');
+   109→    return `${pad(d.getMonth() + 1)}/${pad(d.getDate())}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+   110→  } catch {
+   111→    return raw;
+   112→  }
+   113→};
+   114→
+   115→const statusBadge = (s: string): string => {
+   116→  switch (s.toUpperCase()) {
+   117→    case 'COMPLETED':
+   118→      return 'badge-green';
+   119→    case 'PENDING':
+   120→      return 'badge-amber';
+   121→    case 'PROCESSING':
+   122→      return 'badge-blue';
+   123→    case 'FAILED':
+   124→      return 'badge-red';
+   125→    default:
+   126→      return 'badge-silver';
+   127→  }
+   128→};
+   129→
+   130→const typeBadge = (t: string): string => {
+   131→  switch (t.toUpperCase()) {
+   132→    case 'DEPOSIT':
+   133→    case 'REFERRAL_BONUS':
+   134→      return 'badge-green';
+   135→    case 'WITHDRAW':
+   136→      return 'badge-red';
+   137→    case 'TRADE':
+   138→      return 'badge-blue';
+   139→    case 'COMMISSION':
+   140→      return 'badge-purple';
+   141→    default:
+   142→      return 'badge-silver';
+   143→  }
+   144→};
+   145→
+   146→const authHeaders = (token: string | null): Record<string, string> => ({
+   147→  'Content-Type': 'application/json',
+   148→  ...(token ? { Authorization: `Bearer ${token}` } : {}),
+   149→});
+   150→
+   151→/* ════════════════════════════════════════════════════════════
+   152→   Skeleton Loaders
+   153→   ════════════════════════════════════════════════════════════ */
+   154→function SummarySkeleton() {
+   155→  return (
+   156→    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+   157→      {Array.from({ length: 4 }).map((_, i) => (
+   158→        <div key={i} className="stat-card">
+   159→          <Skeleton className="h-3 w-20 mb-3" />
+   160→          <Skeleton className="h-8 w-32" />
+   161→        </div>
+   162→      ))}
+   163→    </div>
+   164→  );
+   165→}
+   166→
+   167→function BalanceSkeleton() {
+   168→  return (
+   169→    <div className="space-y-3">
+   170→      {Array.from({ length: 3 }).map((_, i) => (
+   171→        <div
+   172→          key={i}
+   173→          className="flex items-center justify-between p-4 rounded-xl"
+   174→          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}
+   175→        >
+   176→          <div className="flex items-center gap-3">
+   177→            <Skeleton className="h-10 w-10 rounded-full" />
+   178→            <Skeleton className="h-4 w-16" />
+   179→          </div>
+   180→          <div className="flex gap-8">
+   181→            <Skeleton className="h-4 w-24 hidden sm:block" />
+   182→            <Skeleton className="h-4 w-20 hidden sm:block" />
+   183→            <Skeleton className="h-4 w-24" />
+   184→          </div>
+   185→        </div>
+   186→      ))}
+   187→    </div>
+   188→  );
+   189→}
+   190→
+   191→function TableSkeleton() {
+   192→  return (
+   193→    <div className="p-4 space-y-4">
+   194→      {Array.from({ length: 6 }).map((_, i) => (
+   195→        <div key={i} className="flex items-center gap-4">
+   196→          <Skeleton className="h-4 w-28 flex-shrink-0" />
+   197→          <Skeleton className="h-5 w-16 rounded-full flex-shrink-0" />
+   198→          <Skeleton className="h-4 w-14 flex-shrink-0" />
+   199→          <Skeleton className="h-4 w-24 flex-shrink-0" />
+   200→          <Skeleton className="h-4 w-16 ml-auto" />
+   201→        </div>
+   202→      ))}
+   203→    </div>
+   204→  );
+   205→}
+   206→
+   207→/* ════════════════════════════════════════════════════════════
+   208→   Currency Icon
+   209→   ════════════════════════════════════════════════════════════ */
+   210→function CurrencyIcon({ currency, size = 22 }: { currency: string; size?: number }) {
+   211→  const meta = CURRENCY_META[currency] || CURRENCY_META.USDT;
+   212→  if (currency === 'BTC') return <Bitcoin size={size} style={{ color: meta.fg }} />;
+   213→  if (currency === 'ETH') {
+   214→    return (
+   215→      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={meta.fg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+   216→        <path d="M12 2L2 12l10 10 10-10L12 2z" />
+   217→        <path d="M12 6L6 12l6 6 6-6-6-6z" />
+   218→      </svg>
+   219→    );
+   220→  }
+   221→  return <CircleDollarSign size={size} style={{ color: meta.fg }} />;
+   222→}
+   223→
+   224→/* ════════════════════════════════════════════════════════════
+   225→   Select (styled)
+   226→   ════════════════════════════════════════════════════════════ */
+   227→function StyledSelect({
+   228→  value,
+   229→  onChange,
+   230→  options,
+   231→}: {
+   232→  value: string;
+   233→  onChange: (v: string) => void;
+   234→  options: readonly string[];
+   235→}) {
+   236→  return (
+   237→    <select
+   238→      className="trade-input appearance-none cursor-pointer"
+   239→      value={value}
+   240→      onChange={(e) => onChange(e.target.value)}
+   241→      style={{
+   242→        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7a8d' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+   243→        backgroundRepeat: 'no-repeat',
+   244→        backgroundPosition: 'right 14px center',
+   245→        paddingRight: '36px',
+   246→      }}
+   247→    >
+   248→      {options.map((o) => (
+   249→        <option key={o} value={o}>
+   250→          {o}
+   251→        </option>
+   252→      ))}
+   253→    </select>
+   254→  );
+   255→}
+   256→
+   257→/* ════════════════════════════════════════════════════════════
+   258→   Main Component
+   259→   ════════════════════════════════════════════════════════════ */
+   260→export default function WalletPage() {
+   261→  const { token, currentPage, navigate } = useStore();
+   262→
+   263→  /* ── server state ──────────────────────────────────── */
+   264→  const [wallets, setWallets] = useState<WalletData[]>([]);
+   265→  const [totalEquity, setTotalEquity] = useState(0);
+   266→  const [recentTx, setRecentTx] = useState<Transaction[]>([]);
+   267→  const [transactions, setTransactions] = useState<Transaction[]>([]);
+   268→  const [txPage, setTxPage] = useState({ page: 1, total: 0, totalPages: 0 });
+   269→  const [walletLoading, setWalletLoading] = useState(true);
+   270→  const [txLoading, setTxLoading] = useState(false);
+   271→  const [error, setError] = useState('');
+   272→
+   273→  /* ── ui state ──────────────────────────────────────── */
+   274→  const [activeTab, setActiveTab] = useState<WalletTab>('overview');
+   275→  const [txFilter, setTxFilter] = useState<TxFilter>('all');
+   276→
+   277→  // deposit
+   278→  const [depCurrency, setDepCurrency] = useState('USDT');
+   279→  const [depNetwork, setDepNetwork] = useState('TRC20');
+   280→  const [copied, setCopied] = useState(false);
+   281→  const [depSubmitted, setDepSubmitted] = useState(false);
+   282→
+   283→  // withdraw
+   284→  const [wdCurrency, setWdCurrency] = useState('USDT');
+   285→  const [wdAmount, setWdAmount] = useState('');
+   286→  const [wdNetwork, setWdNetwork] = useState('TRC20');
+   287→  const [wdAddress, setWdAddress] = useState('');
+   288→  const [wdSubmitting, setWdSubmitting] = useState(false);
+   289→  const [wdError, setWdError] = useState('');
+   290→  const [wdSuccess, setWdSuccess] = useState('');
+   291→
+   292→  /* ══════════════════════════════════════════════════
+   293→     Data Fetching
+   294→     ══════════════════════════════════════════════════ */
+   295→  const fetchWallets = useCallback(async () => {
+   296→    try {
+   297→      setWalletLoading(true);
+   298→      const res = await fetch('/api/wallet', { headers: authHeaders(token) });
+   299→      if (!res.ok) throw new Error('Failed to load wallet data');
+   300→      const data = await res.json();
+   301→      setWallets(data.wallets ?? []);
+   302→      setTotalEquity(data.totalEquity ?? 0);
+   303→    } catch (err) {
+   304→      setError(err instanceof Error ? err.message : 'Failed to load wallet');
+   305→    } finally {
+   306→      setWalletLoading(false);
+   307→    }
+   308→  }, [token]);
+   309→
+   310→  const fetchTransactions = useCallback(
+   311→    async (page = 1, filter: TxFilter = 'all') => {
+   312→      try {
+   313→        setTxLoading(true);
+   314→        const params = new URLSearchParams({ page: String(page), limit: '10' });
+   315→        if (filter !== 'all') {
+   316→          const map: Record<string, string> = {
+   317→            deposits: 'DEPOSIT',
+   318→            withdrawals: 'WITHDRAW',
+   319→            trades: 'TRADE',
+   320→          };
+   321→          params.set('type', map[filter] ?? '');
+   322→        }
+   323→        const res = await fetch(`/api/wallet/transactions?${params}`, {
+   324→          headers: authHeaders(token),
+   325→        });
+   326→        if (!res.ok) throw new Error('Failed to load transactions');
+   327→        const data = await res.json();
+   328→        const norm = (data.transactions ?? []).map((tx: Record<string, unknown>) => ({
+   329→          id: (tx._id as string) ?? (tx.id as string) ?? '',
+   330→          type: tx.type as string,
+   331→          status: tx.status as string,
+   332→          currency: tx.currency as string,
+   333→          amount: Number(tx.amount) || 0,
+   334→          fee: Number(tx.fee) || 0,
+   335→          description: (tx.description as string) ?? '',
+   336→          createdAt: tx.createdAt as string,
+   337→        }));
+   338→        setTransactions(norm);
+   339→        setTxPage(data.pagination ?? { page: 1, total: 0, totalPages: 0 });
+   340→        if (page === 1 && filter === 'all') setRecentTx(norm.slice(0, 5));
+   341→      } catch (err) {
+   342→        setError(err instanceof Error ? err.message : 'Failed to load transactions');
+   343→      } finally {
+   344→        setTxLoading(false);
+   345→      }
+   346→    },
+   347→    [token],
+   348→  );
+   349→
+   350→  /* eslint-disable react-hooks/set-state-in-effect */
+   351→  useEffect(() => {
+   352→    fetchWallets();
+   353→  }, [fetchWallets]);
+   354→
+   355→  useEffect(() => {
+   356→    fetchTransactions(1, 'all');
+   357→  }, [fetchTransactions]);
+   358→
+   359→  useEffect(() => {
+   360→    if (currentPage === Pages.TRANSACTIONS) {
+   361→      fetchTransactions(1, txFilter);
+   362→    }
+   363→    // eslint-disable-next-line react-hooks/exhaustive-deps
+   364→  }, [txFilter, currentPage]);
+   365→  /* eslint-enable react-hooks/set-state-in-effect */
+   366→
+   367→  /* ══════════════════════════════════════════════════
+   368→     Computed
+   369→     ══════════════════════════════════════════════════ */
+   370→  const allBalances = wallets.flatMap((w) => w.balances);
+   371→
+   372→  const getBalance = (currency: string): Balance =>
+   373→    allBalances.find((b) => b.currency === currency) ?? {
+   374→      currency,
+   375→      amount: 0,
+   376→      frozen: 0,
+   377→    };
+   378→
+   379→  const totalAvailable = allBalances
+   380→    .filter((b) => b.currency === 'USDT')
+   381→    .reduce((s, b) => s + Math.max(0, b.amount - b.frozen), 0);
+   382→
+   383→  const totalFrozen = allBalances.reduce((s, b) => s + b.frozen, 0);
+   384→
+   385→  const filteredBalances = (() => {
+   386→    const src =
+   387→      activeTab === 'overview'
+   388→        ? wallets
+   389→        : wallets.filter((w) => w.type.toUpperCase() === activeTab.toUpperCase());
+   390→    const map = new Map<string, Balance>();
+   391→    src.forEach((w) =>
+   392→      w.balances.forEach((b) => {
+   393→        const ex = map.get(b.currency) ?? { currency: b.currency, amount: 0, frozen: 0 };
+   394→        map.set(b.currency, {
+   395→          ...ex,
+   396→          amount: ex.amount + b.amount,
+   397→          frozen: ex.frozen + b.frozen,
+   398→        });
+   399→      }),
+   400→    );
+   401→    return Array.from(map.values());
+   402→  })();
+   403→
+   404→  /* ══════════════════════════════════════════════════
+   405→     Handlers
+   406→     ══════════════════════════════════════════════════ */
+   407→  const handleCopy = async (text: string) => {
+   408→    try {
+   409→      await navigator.clipboard.writeText(text);
+   410→      setCopied(true);
+   411→      setTimeout(() => setCopied(false), 2000);
+   412→    } catch {
+   413→      /* noop */
+   414→    }
+   415→  };
+   416→
+   417→  const handleDepositSubmit = () => {
+   418→    setDepSubmitted(true);
+   419→    setTimeout(() => {
+   420→      setDepSubmitted(false);
+   421→      navigate(Pages.WALLET);
+   422→    }, 2500);
+   423→  };
+   424→
+   425→  const handleWithdraw = async () => {
+   426→    setWdError('');
+   427→    setWdSuccess('');
+   428→    const amt = parseFloat(wdAmount);
+   429→    if (isNaN(amt) || amt <= 0) {
+   430→      setWdError('Please enter a valid amount');
+   431→      return;
+   432→    }
+   433→    if (!wdAddress.trim()) {
+   434→      setWdError('Please enter a withdrawal address');
+   435→      return;
+   436→    }
+   437→    setWdSubmitting(true);
+   438→    try {
+   439→      const res = await fetch('/api/wallet/withdraw', {
+   440→        method: 'POST',
+   441→        headers: authHeaders(token),
+   442→        body: JSON.stringify({
+   443→          currency: wdCurrency,
+   444→          amount: amt,
+   445→          address: wdAddress.trim(),
+   446→        }),
+   447→      });
+   448→      const data = await res.json();
+   449→      if (!res.ok) throw new Error(data.error || 'Withdrawal request failed');
+   450→      setWdSuccess(data.message || 'Withdrawal submitted successfully');
+   451→      fetchWallets();
+   452→      setTimeout(() => navigate(Pages.WALLET), 2000);
+   453→    } catch (err) {
+   454→      setWdError(err instanceof Error ? err.message : 'Withdrawal failed');
+   455→    } finally {
+   456→      setWdSubmitting(false);
+   457→    }
+   458→  };
+   459→
+   460→  /* ══════════════════════════════════════════════════
+   461→     Page routing booleans
+   462→     ══════════════════════════════════════════════════ */
+   463→  const isDeposit = currentPage === Pages.DEPOSIT;
+   464→  const isWithdraw = currentPage === Pages.WITHDRAW;
+   465→  const isTxPage = currentPage === Pages.TRANSACTIONS;
+   466→  const isOverview = !isDeposit && !isWithdraw && !isTxPage;
+   467→
+   468→  /* ══════════════════════════════════════════════════
+   469→     Sub-views
+   470→     ══════════════════════════════════════════════════ */
+   471→
+   472→  /* ── Deposit Form ────────────────────────────────── */
+   473→  const depAddr = DEPOSIT_ADDRESSES[`${depCurrency}-${depNetwork}`] ?? '0x0';
+   474→
+   475→  const renderDeposit = () => (
+   476→    <div className="space-y-6">
+   477→      <div className="flex items-center gap-3">
+   478→        <button
+   479→          onClick={() => navigate(Pages.WALLET)}
+   480→          className="btn-secondary flex items-center gap-2 !py-2 !px-4"
+   481→        >
+   482→          <ArrowLeft size={16} /> Back
+   483→        </button>
+   484→        <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+   485→          Deposit
+   486→        </h2>
+   487→      </div>
+   488→
+   489→      {depSubmitted ? (
+   490→        <div className="glass-card p-8 text-center space-y-4">
+   491→          <div
+   492→            className="mx-auto w-16 h-16 rounded-full flex items-center justify-center"
+   493→            style={{ background: 'rgba(0, 210, 106, 0.15)' }}
+   494→          >
+   495→            <Check size={32} style={{ color: 'var(--accent-green)' }} />
+   496→          </div>
+   497→          <h3 className="text-lg font-bold" style={{ color: 'var(--accent-green)' }}>
+   498→            Deposit Request Submitted
+   499→          </h3>
+   500→          <p style={{ color: 'var(--text-secondary)' }}>
+   501→            Your deposit is being processed. Funds will appear in your wallet once confirmed on the
+   502→            network.
+   503→          </p>
+   504→        </div>
+   505→      ) : (
+   506→        <div className="glass-card p-6 space-y-6">
+   507→          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   508→            <div>
+   509→              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
+   510→                Select Currency
+   511→              </label>
+   512→              <StyledSelect
+   513→                value={depCurrency}
+   514→                onChange={(v) => {
+   515→                  setDepCurrency(v);
+   516→                  setCopied(false);
+   517→                }}
+   518→                options={CURRENCIES}
+   519→              />
+   520→            </div>
+   521→            <div>
+   522→              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
+   523→                Network
+   524→              </label>
+   525→              <StyledSelect
+   526→                value={depNetwork}
+   527→                onChange={(v) => {
+   528→                  setDepNetwork(v);
+   529→                  setCopied(false);
+   530→                }}
+   531→                options={NETWORKS}
+   532→              />
+   533→            </div>
+   534→          </div>
+   535→
+   536→          {/* Deposit address */}
+   537→          <div>
+   538→            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
+   539→              Deposit Address
+   540→            </label>
+   541→            <div className="flex items-center gap-2">
+   542→              <div
+   543→                className="trade-input flex-1 !py-3 font-mono text-xs sm:text-sm select-all"
+   544→                style={{
+   545→                  background: 'var(--bg-primary)',
+   546→                  overflow: 'hidden',
+   547→                  textOverflow: 'ellipsis',
+   548→                  whiteSpace: 'nowrap',
+   549→                }}
+   550→              >
+   551→                {depAddr}
+   552→              </div>
+   553→              <button
+   554→                onClick={() => handleCopy(depAddr)}
+   555→                className="btn-secondary !p-3 flex-shrink-0"
+   556→                title="Copy address"
+   557→              >
+   558→                {copied ? (
+   559→                  <Check size={18} style={{ color: 'var(--accent-green)' }} />
+   560→                ) : (
+   561→                  <Copy size={18} />
+   562→                )}
+   563→              </button>
+   564→            </div>
+   565→          </div>
+   566→
+   567→          {/* QR code placeholder */}
+   568→          <div className="flex flex-col items-center gap-4 py-2">
+   569→            <div
+   570→              className="w-48 h-48 rounded-2xl flex flex-col items-center justify-center"
+   571→              style={{
+   572→                background: 'var(--bg-primary)',
+   573→                border: '2px dashed var(--border-color)',
+   574→              }}
+   575→            >
+   576→              <QrCode size={48} style={{ color: 'var(--text-muted)' }} />
+   577→              <span className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+   578→                QR Code
+   579→              </span>
+   580→            </div>
+   581→            <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+   582→              <Info size={14} />
+   583→              Minimum Deposit: $10.00
+   584→            </div>
+   585→          </div>
+   586→
+   587→          <button onClick={handleDepositSubmit} className="btn-gold w-full !py-3 text-base">
+   588→            I Have Sent the Funds
+   589→          </button>
+   590→        </div>
+   591→      )}
+   592→    </div>
+   593→  );
+   594→
+   595→  /* ── Withdraw Form ───────────────────────────────── */
+   596→  const wdBal = getBalance(wdCurrency);
+   597→  const wdAvailable = Math.max(0, wdBal.amount - wdBal.frozen);
+   598→
+   599→  const renderWithdraw = () => (
+   600→    <div className="space-y-6">
+   601→      <div className="flex items-center gap-3">
+   602→        <button
+   603→          onClick={() => navigate(Pages.WALLET)}
+   604→          className="btn-secondary flex items-center gap-2 !py-2 !px-4"
+   605→        >
+   606→          <ArrowLeft size={16} /> Back
+   607→        </button>
+   608→        <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+   609→          Withdraw
+   610→        </h2>
+   611→      </div>
+   612→
+   613→      <div className="glass-card p-6 space-y-5">
+   614→        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   615→          <div>
+   616→            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
+   617→              Currency
+   618→            </label>
+   619→            <StyledSelect value={wdCurrency} onChange={setWdCurrency} options={CURRENCIES} />
+   620→          </div>
+   621→          <div>
+   622→            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
+   623→              Network
+   624→            </label>
+   625→            <StyledSelect value={wdNetwork} onChange={setWdNetwork} options={NETWORKS} />
+   626→          </div>
+   627→        </div>
+   628→
+   629→        <div>
+   630→          <div className="flex items-center justify-between mb-2">
+   631→            <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+   632→              Amount
+   633→            </label>
+   634→            <button
+   635→              onClick={() => setWdAmount(String(wdAvailable))}
+   636→              className="text-xs font-medium"
+   637→              style={{
+   638→                color: 'var(--accent-cyan)',
+   639→                background: 'none',
+   640→                border: 'none',
+   641→                cursor: 'pointer',
+   642→              }}
+   643→            >
+   644→              Available: {formatAmount(wdAvailable, wdCurrency)} {wdCurrency}
+   645→            </button>
+   646→          </div>
+   647→          <input
+   648→            type="number"
+   649→            className="trade-input"
+   650→            placeholder="0.00"
+   651→            value={wdAmount}
+   652→            onChange={(e) => setWdAmount(e.target.value)}
+   653→            min="0"
+   654→            step="any"
+   655→          />
+   656→        </div>
+   657→
+   658→        <div>
+   659→          <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
+   660→            Withdrawal Address
+   661→          </label>
+   662→          <input
+   663→            type="text"
+   664→            className="trade-input"
+   665→            placeholder="Enter withdrawal address"
+   666→            value={wdAddress}
+   667→            onChange={(e) => setWdAddress(e.target.value)}
+   668→          />
+   669→        </div>
+   670→
+   671→        <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-muted)' }}>
+   672→          <Info size={14} />
+   673→          Fee: 1.00 USDT
+   674→        </div>
+   675→
+   676→        {wdError && (
+   677→          <div
+   678→            className="flex items-center gap-2 p-3 rounded-xl text-sm"
+   679→            style={{
+   680→              background: 'rgba(255, 61, 87, 0.1)',
+   681→              color: 'var(--accent-red)',
+   682→              border: '1px solid rgba(255, 61, 87, 0.2)',
+   683→            }}
+   684→          >
+   685→            <AlertCircle size={16} /> {wdError}
+   686→          </div>
+   687→        )}
+   688→
+   689→        {wdSuccess && (
+   690→          <div
+   691→            className="flex items-center gap-2 p-3 rounded-xl text-sm"
+   692→            style={{
+   693→              background: 'rgba(0, 210, 106, 0.1)',
+   694→              color: 'var(--accent-green)',
+   695→              border: '1px solid rgba(0, 210, 106, 0.2)',
+   696→            }}
+   697→          >
+   698→            <Check size={16} /> {wdSuccess}
+   699→          </div>
+   700→        )}
+   701→
+   702→        <button
+   703→          onClick={handleWithdraw}
+   704→          disabled={wdSubmitting}
+   705→          className="btn-danger w-full !py-3 text-base flex items-center justify-center gap-2 disabled:opacity-50"
+   706→        >
+   707→          {wdSubmitting ? (
+   708→            <>
+   709→              <Loader2 size={18} className="animate-spin" /> Processing...
+   710→            </>
+   711→          ) : (
+   712→            'Submit Withdrawal'
+   713→          )}
+   714→        </button>
+   715→      </div>
+   716→    </div>
+   717→  );
+   718→
+   719→  /* ── Transactions Page ───────────────────────────── */
+   720→  const renderTransactions = () => (
+   721→    <div className="space-y-6">
+   722→      <div className="flex items-center justify-between flex-wrap gap-3">
+   723→        <div className="flex items-center gap-3">
+   724→          <button
+   725→            onClick={() => navigate(Pages.WALLET)}
+   726→            className="btn-secondary flex items-center gap-2 !py-2 !px-4"
+   727→          >
+   728→            <ArrowLeft size={16} /> Back
+   729→          </button>
+   730→          <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+   731→            Transaction History
+   732→          </h2>
+   733→        </div>
+   734→      </div>
+   735→
+   736→      {/* Filter bar */}
+   737→      <div
+   738→        className="flex gap-1 p-1 rounded-lg"
+   739→        style={{
+   740→          background: 'var(--bg-secondary)',
+   741→          border: '1px solid var(--border-color)',
+   742→          width: 'fit-content',
+   743→        }}
+   744→      >
+   745→        {TX_FILTERS.map((f) => (
+   746→          <button
+   747→            key={f.key}
+   748→            onClick={() => setTxFilter(f.key)}
+   749→            className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
+   750→            style={{
+   751→              color: txFilter === f.key ? 'var(--text-primary)' : 'var(--text-muted)',
+   752→              background: txFilter === f.key ? 'var(--bg-card)' : 'transparent',
+   753→              border: 'none',
+   754→              cursor: 'pointer',
+   755→            }}
+   756→          >
+   757→            {f.label}
+   758→          </button>
+   759→        ))}
+   760→      </div>
+   761→
+   762→      {/* Table */}
+   763→      <div className="glass-card overflow-hidden">
+   764→        {txLoading ? (
+   765→          <TableSkeleton />
+   766→        ) : transactions.length === 0 ? (
+   767→          <div className="p-12 text-center" style={{ color: 'var(--text-muted)' }}>
+   768→            <Wallet size={40} className="mx-auto mb-3 opacity-40" />
+   769→            <p>No transactions found</p>
+   770→          </div>
+   771→        ) : (
+   772→          <>
+   773→            <div className="overflow-x-auto max-h-[480px] overflow-y-auto">
+   774→              <table className="data-table">
+   775→                <thead>
+   776→                  <tr>
+   777→                    <th>Date</th>
+   778→                    <th>Type</th>
+   779→                    <th>Currency</th>
+   780→                    <th>Amount</th>
+   781→                    <th>Fee</th>
+   782→                    <th>Status</th>
+   783→                    <th className="hidden md:table-cell">Description</th>
+   784→                  </tr>
+   785→                </thead>
+   786→                <tbody>
+   787→                  {transactions.map((tx) => (
+   788→                    <tr key={tx.id}>
+   789→                      <td className="whitespace-nowrap">{formatDate(tx.createdAt)}</td>
+   790→                      <td>
+   791→                        <span className={`badge ${typeBadge(tx.type)}`}>{tx.type}</span>
+   792→                      </td>
+   793→                      <td className="font-medium" style={{ color: 'var(--text-primary)' }}>
+   794→                        {tx.currency}
+   795→                      </td>
+   796→                      <td
+   797→                        className="font-semibold"
+   798→                        style={{
+   799→                          color:
+   800→                            tx.type === 'DEPOSIT' || tx.type === 'REFERRAL_BONUS'
+   801→                              ? 'var(--accent-green)'
+   802→                              : 'var(--accent-red)',
+   803→                        }}
+   804→                      >
+   805→                        {tx.type === 'DEPOSIT' || tx.type === 'REFERRAL_BONUS' ? '+' : '-'}
+   806→                        {formatAmount(tx.amount, tx.currency)}
+   807→                      </td>
+   808→                      <td>{tx.fee > 0 ? formatAmount(tx.fee, tx.currency) : '—'}</td>
+   809→                      <td>
+   810→                        <span className={`badge ${statusBadge(tx.status)}`}>{tx.status}</span>
+   811→                      </td>
+   812→                      <td
+   813→                        className="hidden md:table-cell max-w-[200px] truncate"
+   814→                        style={{ color: 'var(--text-muted)' }}
+   815→                      >
+   816→                        {tx.description || '—'}
+   817→                      </td>
+   818→                    </tr>
+   819→                  ))}
+   820→                </tbody>
+   821→              </table>
+   822→            </div>
+   823→
+   824→            {/* Pagination */}
+   825→            {txPage.totalPages > 1 && (
+   826→              <div
+   827→                className="flex items-center justify-between p-4"
+   828→                style={{ borderTop: '1px solid var(--border-color)' }}
+   829→              >
+   830→                <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+   831→                  Page {txPage.page} of {txPage.totalPages} &middot; {txPage.total} total
+   832→                </span>
+   833→                <div className="flex gap-2">
+   834→                  <button
+   835→                    onClick={() => fetchTransactions(txPage.page - 1, txFilter)}
+   836→                    disabled={txPage.page <= 1}
+   837→                    className="btn-secondary !py-1.5 !px-3 disabled:opacity-30"
+   838→                  >
+   839→                    <ChevronLeft size={16} />
+   840→                  </button>
+   841→                  <button
+   842→                    onClick={() => fetchTransactions(txPage.page + 1, txFilter)}
+   843→                    disabled={txPage.page >= txPage.totalPages}
+   844→                    className="btn-secondary !py-1.5 !px-3 disabled:opacity-30"
+   845→                  >
+   846→                    <ChevronRight size={16} />
+   847→                  </button>
+   848→                </div>
+   849→              </div>
+   850→            )}
+   851→          </>
+   852→        )}
+   853→      </div>
+   854→    </div>
+   855→  );
+   856→
+   857→  /* ── Balance List (overview / tab) ───────────────── */
+   858→  const renderBalanceList = () => (
+   859→    <div className="space-y-3">
+   860→      {CURRENCIES.map((cur) => {
+   861→        const bal = filteredBalances.find((b) => b.currency === cur) ?? {
+   862→          currency: cur,
+   863→          amount: 0,
+   864→          frozen: 0,
+   865→        };
+   866→        const meta = CURRENCY_META[cur] ?? CURRENCY_META.USDT;
+   867→        return (
+   868→          <motion.div
+   869→            key={cur}
+   870→            className="flex items-center justify-between p-4 rounded-xl"
+   871→            style={{
+   872→              background: 'var(--bg-secondary)',
+   873→              border: '1px solid var(--border-color)',
+   874→            }}
+   875→            whileHover={{ borderColor: 'rgba(245, 180, 0, 0.3)' }}
+   876→          >
+   877→            <div className="flex items-center gap-3">
+   878→              <div
+   879→                className="flex items-center justify-center rounded-full flex-shrink-0"
+   880→                style={{ width: 42, height: 42, background: meta.bg }}
+   881→              >
+   882→                <CurrencyIcon currency={cur} />
+   883→              </div>
+   884→              <div>
+   885→                <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+   886→                  {cur}
+   887→                </span>
+   888→                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+   889→                  Available:{' '}
+   890→                  <span style={{ color: 'var(--accent-green)' }}>
+   891→                    {formatAmount(bal.amount, cur)}
+   892→                  </span>
+   893→                </div>
+   894→              </div>
+   895→            </div>
+   896→            <div className="flex gap-4 sm:gap-10 text-right">
+   897→              <div className="hidden sm:block">
+   898→                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+   899→                  Frozen
+   900→                </div>
+   901→                <div className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+   902→                  {formatAmount(bal.frozen, cur)}
+   903→                </div>
+   904→              </div>
+   905→              <div>
+   906→                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+   907→                  Total Value
+   908→                </div>
+   909→                <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
+   910→                  {cur === 'USDT'
+   911→                    ? formatUSD(bal.amount + bal.frozen)
+   912→                    : formatAmount(bal.amount + bal.frozen, cur)}
+   913→                </div>
+   914→              </div>
+   915→            </div>
+   916→          </motion.div>
+   917→        );
+   918→      })}
+   919→    </div>
+   920→  );
+   921→
+   922→  /* ── Wallet Overview ─────────────────────────────── */
+   923→  const renderOverview = () => (
+   924→    <div className="space-y-6">
+   925→      {/* Tabs */}
+   926→      <div
+   927→        className="flex gap-1 p-1 rounded-lg"
+   928→        style={{
+   929→          background: 'var(--bg-secondary)',
+   930→          border: '1px solid var(--border-color)',
+   931→          width: 'fit-content',
+   932→        }}
+   933→      >
+   934→        {WALLET_TABS.map((tab) => (
+   935→          <button
+   936→            key={tab.key}
+   937→            onClick={() => setActiveTab(tab.key)}
+   938→            className="relative px-5 py-2 rounded-md text-sm font-medium transition-colors"
+   939→            style={{
+   940→              color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-muted)',
+   941→              background: activeTab === tab.key ? 'var(--bg-card)' : 'transparent',
+   942→              border: 'none',
+   943→              cursor: 'pointer',
+   944→              zIndex: 1,
+   945→            }}
+   946→          >
+   947→            {tab.label}
+   948→            {activeTab === tab.key && (
+   949→              <motion.div
+   950→                layoutId="wallet-tab-ind"
+   951→                className="absolute inset-0 rounded-md"
+   952→                style={{
+   953→                  background: 'var(--bg-card)',
+   954→                  border: '1px solid var(--border-color)',
+   955→                  zIndex: -1,
+   956→                }}
+   957→                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+   958→              />
+   959→            )}
+   960→          </button>
+   961→        ))}
+   962→      </div>
+   963→
+   964→      {/* Action buttons */}
+   965→      <div className="flex flex-wrap gap-3">
+   966→        <motion.button
+   967→          className="btn-primary flex items-center gap-2"
+   968→          whileHover={{ scale: 1.03 }}
+   969→          whileTap={{ scale: 0.97 }}
+   970→          onClick={() => navigate(Pages.DEPOSIT)}
+   971→        >
+   972→          <ArrowDownLeft size={16} /> Deposit
+   973→        </motion.button>
+   974→        <motion.button
+   975→          className="btn-secondary flex items-center gap-2"
+   976→          whileHover={{ scale: 1.03 }}
+   977→          whileTap={{ scale: 0.97 }}
+   978→          onClick={() => navigate(Pages.WITHDRAW)}
+   979→        >
+   980→          <ArrowUpRight size={16} /> Withdraw
+   981→        </motion.button>
+   982→        <motion.button
+   983→          className="btn-secondary flex items-center gap-2"
+   984→          whileHover={{ scale: 1.03 }}
+   985→          whileTap={{ scale: 0.97 }}
+   986→        >
+   987→          <ArrowLeftRight size={16} /> Transfer
+   988→        </motion.button>
+   989→      </div>
+   990→
+   991→      {/* Balance list */}
+   992→      {walletLoading ? <BalanceSkeleton /> : renderBalanceList()}
+   993→
+   994→      {/* Recent transactions */}
+   995→      <div className="glass-card">
+   996→        <div className="flex items-center justify-between p-4 pb-0">
+   997→          <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+   998→            Recent Transactions
+   999→          </h3>
+  1000→          <button
+  1001→            className="text-sm font-medium hover:underline"
+  1002→            style={{
+  1003→              color: 'var(--accent-cyan)',
+  1004→              background: 'none',
+  1005→              border: 'none',
+  1006→              cursor: 'pointer',
+  1007→            }}
+  1008→            onClick={() => navigate(Pages.TRANSACTIONS)}
+  1009→          >
+  1010→            View All
+  1011→          </button>
+  1012→        </div>
+  1013→        {recentTx.length === 0 ? (
+  1014→          <div className="p-8 text-center" style={{ color: 'var(--text-muted)' }}>
+  1015→            <p className="text-sm">No recent transactions</p>
+  1016→          </div>
+  1017→        ) : (
+  1018→          <div className="overflow-x-auto">
+  1019→            <table className="data-table">
+  1020→              <thead>
+  1021→                <tr>
+  1022→                  <th>Type</th>
+  1023→                  <th>Currency</th>
+  1024→                  <th>Amount</th>
+  1025→                  <th>Status</th>
+  1026→                  <th>Date</th>
+  1027→                </tr>
+  1028→              </thead>
+  1029→              <tbody>
+  1030→                {recentTx.map((tx) => (
+  1031→                  <tr key={tx.id}>
+  1032→                    <td>
+  1033→                      <span className={`badge ${typeBadge(tx.type)}`}>{tx.type}</span>
+  1034→                    </td>
+  1035→                    <td className="font-medium" style={{ color: 'var(--text-primary)' }}>
+  1036→                      {tx.currency}
+  1037→                    </td>
+  1038→                    <td
+  1039→                      className="font-semibold"
+  1040→                      style={{
+  1041→                        color:
+  1042→                          tx.type === 'DEPOSIT' || tx.type === 'REFERRAL_BONUS'
+  1043→                            ? 'var(--accent-green)'
+  1044→                            : 'var(--accent-red)',
+  1045→                      }}
+  1046→                    >
+  1047→                      {tx.type === 'DEPOSIT' || tx.type === 'REFERRAL_BONUS' ? '+' : '-'}
+  1048→                      {formatAmount(tx.amount, tx.currency)}
+  1049→                    </td>
+  1050→                    <td>
+  1051→                      <span className={`badge ${statusBadge(tx.status)}`}>{tx.status}</span>
+  1052→                    </td>
+  1053→                    <td style={{ color: 'var(--text-muted)' }}>{formatDate(tx.createdAt)}</td>
+  1054→                  </tr>
+  1055→                ))}
+  1056→              </tbody>
+  1057→            </table>
+  1058→          </div>
+  1059→        )}
+  1060→      </div>
+  1061→    </div>
+  1062→  );
+  1063→
+  1064→  /* ══════════════════════════════════════════════════
+  1065→     Render
+  1066→     ══════════════════════════════════════════════════ */
+  1067→  return (
+  1068→    <motion.div
+  1069→      className="space-y-6"
+  1070→      style={{ paddingBottom: 40 }}
+  1071→      initial={{ opacity: 0, y: 12 }}
+  1072→      animate={{ opacity: 1, y: 0 }}
+  1073→      transition={{ duration: 0.35, ease: 'easeOut' as const }}
+  1074→    >
+  1075→      {/* Header (overview only) */}
+  1076→      {isOverview && (
+  1077→        <div>
+  1078→          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+  1079→            Wallet
+  1080→          </h1>
+  1081→          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+  1082→            Manage your assets and transactions
+  1083→          </p>
+  1084→        </div>
+  1085→      )}
+  1086→
+  1087→      {/* Global error */}
+  1088→      {error && isOverview && (
+  1089→        <div
+  1090→          className="flex items-center gap-2 p-3 rounded-xl text-sm"
+  1091→          style={{
+  1092→            background: 'rgba(255, 61, 87, 0.1)',
+  1093→            color: 'var(--accent-red)',
+  1094→            border: '1px solid rgba(255, 61, 87, 0.2)',
+  1095→          }}
+  1096→        >
+  1097→          <AlertCircle size={16} /> {error}
+  1098→          <button
+  1099→            onClick={() => setError('')}
+  1100→            className="ml-auto"
+  1101→            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit' }}
+  1102→          >
+  1103→            &times;
+  1104→          </button>
+  1105→        </div>
+  1106→      )}
+  1107→
+  1108→      {/* ── Summary Cards (always visible) ──────────── */}
+  1109→      {walletLoading && isOverview ? (
+  1110→        <SummarySkeleton />
+  1111→      ) : (
+  1112→        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+  1113→          <div className="stat-card">
+  1114→            <span className="text-xs font-medium block mb-1" style={{ color: 'var(--text-muted)' }}>
+  1115→              Total Assets
+  1116→            </span>
+  1117→            <div className="stat-value text-xl sm:text-2xl">{formatUSD(totalEquity)}</div>
+  1118→          </div>
+  1119→          <div className="stat-card">
+  1120→            <span className="text-xs font-medium block mb-1" style={{ color: 'var(--text-muted)' }}>
+  1121→              Available
+  1122→            </span>
+  1123→            <div className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--accent-cyan)' }}>
+  1124→              {formatUSD(totalAvailable)}
+  1125→            </div>
+  1126→          </div>
+  1127→          <div className="stat-card">
+  1128→            <span className="text-xs font-medium block mb-1" style={{ color: 'var(--text-muted)' }}>
+  1129→              In Orders
+  1130→            </span>
+  1131→            <div className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--accent-amber)' }}>
+  1132→              {formatUSD(totalFrozen)}
+  1133→            </div>
+  1134→          </div>
+  1135→          <div className="stat-card">
+  1136→            <span className="text-xs font-medium block mb-1" style={{ color: 'var(--text-muted)' }}>
+  1137→              Today&apos;s P&amp;L
+  1138→            </span>
+  1139→            <div className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--accent-green)' }}>
+  1140→              $0.00
+  1141→            </div>
+  1142→          </div>
+  1143→        </div>
+  1144→      )}
+  1145→
+  1146→      {/* ── Main Content ────────────────────────────── */}
+  1147→      <AnimatePresence mode="wait">
+  1148→        {isDeposit ? (
+  1149→          <motion.div
+  1150→            key="deposit"
+  1151→            initial={{ opacity: 0, x: 20 }}
+  1152→            animate={{ opacity: 1, x: 0 }}
+  1153→            exit={{ opacity: 0, x: -20 }}
+  1154→            transition={{ duration: 0.25 }}
+  1155→          >
+  1156→            {renderDeposit()}
+  1157→          </motion.div>
+  1158→        ) : isWithdraw ? (
+  1159→          <motion.div
+  1160→            key="withdraw"
+  1161→            initial={{ opacity: 0, x: 20 }}
+  1162→            animate={{ opacity: 1, x: 0 }}
+  1163→            exit={{ opacity: 0, x: -20 }}
+  1164→            transition={{ duration: 0.25 }}
+  1165→          >
+  1166→            {renderWithdraw()}
+  1167→          </motion.div>
+  1168→        ) : isTxPage ? (
+  1169→          <motion.div
+  1170→            key="transactions"
+  1171→            initial={{ opacity: 0, x: 20 }}
+  1172→            animate={{ opacity: 1, x: 0 }}
+  1173→            exit={{ opacity: 0, x: -20 }}
+  1174→            transition={{ duration: 0.25 }}
+  1175→          >
+  1176→            {renderTransactions()}
+  1177→          </motion.div>
+  1178→        ) : (
+  1179→          <motion.div
+  1180→            key="overview"
+  1181→            initial={{ opacity: 0, x: 20 }}
+  1182→            animate={{ opacity: 1, x: 0 }}
+  1183→            exit={{ opacity: 0, x: -20 }}
+  1184→            transition={{ duration: 0.25 }}
+  1185→          >
+  1186→            {renderOverview()}
+  1187→          </motion.div>
+  1188→        )}
+  1189→      </AnimatePresence>
+  1190→    </motion.div>
+  1191→  );
+  1192→}

@@ -45,7 +45,7 @@ interface NavSection {
 }
 
 const mainItems: NavItem[] = [
-  { icon: <Home size={20} />, label: 'Home', page: Pages.HOME },
+  { icon: <Home size={20} />, label: 'Home', page: Pages.DASHBOARD },
   { icon: <LayoutDashboard size={20} />, label: 'Dashboard', page: Pages.DASHBOARD },
   { icon: <TrendingUp size={20} />, label: 'Markets', page: Pages.MARKETS },
   { icon: <Eye size={20} />, label: 'Watchlist', page: Pages.WATCHLIST },

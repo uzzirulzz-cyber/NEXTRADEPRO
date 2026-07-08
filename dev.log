@@ -1,0 +1,20 @@
+$ next dev
+▲ Next.js 16.2.9 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://21.0.15.196:3000
+- Environments: .env
+✓ Ready in 280ms
+⚠ `eslint` configuration in next.config.ts is no longer supported. See more info here: https://nextjs.org/docs/app/api-reference/cli/next#next-lint-options
+⚠ Invalid next.config.ts options detected: 
+⚠     Unrecognized key(s) in object: 'eslint'
+⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+
+ GET / 200 in 460ms (next.js: 130ms, application-code: 330ms)
+ GET / 200 in 47ms (next.js: 3ms, application-code: 45ms)
+Login error: ErrorEvent {
+  type: 'error',
+  defaultPrevented: false,
+  cancelable: false,
+  timeStamp: 19442.494914
+}
+ POST /api/auth/login 500 in 1058ms (next.js: 657ms, application-code: 400ms)

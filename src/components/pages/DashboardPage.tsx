@@ -20,6 +20,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { useStore, Pages } from '@/store/useStore';
+import { COINS, getBaseSymbol, formatPrice } from '@/lib/coins';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -64,19 +65,6 @@ interface TransactionRecord {
   description: string;
   createdAt: string;
 }
-
-// ── Mock Market Data ───────────────────────────────────────────────────────
-
-const marketCoins = [
-  { pair: 'BTC/USDT', price: 67342.18, change: 2.35 },
-  { pair: 'ETH/USDT', price: 3521.47, change: 1.82 },
-  { pair: 'BNB/USDT', price: 589.12, change: -0.94 },
-  { pair: 'SOL/USDT', price: 178.93, change: 4.21 },
-  { pair: 'XRP/USDT', price: 0.6234, change: -1.37 },
-  { pair: 'DOGE/USDT', price: 0.1523, change: 3.58 },
-  { pair: 'ADA/USDT', price: 0.4812, change: -2.14 },
-  { pair: 'AVAX/USDT', price: 37.65, change: 1.09 },
-];
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -188,6 +176,7 @@ interface DashboardData {
   me: { id: string; name: string; role: string; status: string } | null;
   totalEquity: number;
   availableUSDT: number;
+  frozenUSDT: number;
   totalPnl: number;
   activeTrades: number;
   totalTrades: number;
@@ -200,6 +189,7 @@ const initialData: DashboardData = {
   me: null,
   totalEquity: 0,
   availableUSDT: 0,
+  frozenUSDT: 0,
   totalPnl: 0,
   activeTrades: 0,
   totalTrades: 0,
@@ -209,7 +199,7 @@ const initialData: DashboardData = {
 };
 
 export default function DashboardPage() {
-  const { token, user: storeUser, currentPage, navigate } = useStore();
+  const { token, user: storeUser, currentPage, navigate, setSelectedCoin } = useStore();
 
   const [data, setData] = useState<DashboardData>(initialData);
   const [loading, setLoading] = useState(true);
@@ -225,8 +215,8 @@ export default function DashboardPage() {
       const [meRes, walletRes, tradesRes, txRes] = await Promise.all([
         fetch('/api/auth/me', { headers }).then((r) => r.json()),
         fetch('/api/wallet', { headers }).then((r) => r.json()),
-        fetch('/api/trades?limit=10', { headers }).then((r) => r.json()),
-        fetch('/api/wallet/transactions?limit=10', { headers }).then((r) => r.json()),
+        fetch('/api/trades?limit=5', { headers }).then((r) => r.json()),
+        fetch('/api/wallet/transactions?limit=5', { headers }).then((r) => r.json()),
       ]);
 
       // Build new state
@@ -243,14 +233,17 @@ export default function DashboardPage() {
         next.totalEquity = equity;
 
         let avail = 0;
+        let frozen = 0;
         for (const w of walletRes.wallets as WalletData[]) {
           for (const b of w.balances) {
             if (b.currency === 'USDT') {
               avail += b.amount - b.frozen;
+              frozen += b.frozen;
             }
           }
         }
         next.availableUSDT = avail;
+        next.frozenUSDT = frozen;
         next.portfolioData = generatePortfolioData(equity);
       }
 
@@ -263,21 +256,6 @@ export default function DashboardPage() {
         next.totalPnl = tList
           .filter((t) => t.status === 'CLOSED' || t.status === 'LIQUIDATED')
           .reduce((sum, t) => sum + (t.pnl || 0), 0);
-      } else {
-        try {
-          const allTrades = await fetch('/api/trades?limit=100', { headers }).then((r) => r.json());
-          if (allTrades.trades) {
-            const fullList = allTrades.trades as TradeRecord[];
-            next.trades = fullList.slice(0, 10);
-            next.totalTrades = allTrades.pagination?.total ?? 0;
-            next.activeTrades = fullList.filter((t) => t.status === 'OPEN').length;
-            next.totalPnl = fullList
-              .filter((t) => t.status === 'CLOSED' || t.status === 'LIQUIDATED')
-              .reduce((sum, t) => sum + (t.pnl || 0), 0);
-          }
-        } catch {
-          // silently ignore
-        }
       }
 
       // Transactions
@@ -296,7 +274,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (token) {
-      // Data fetching on mount / page change — setState is deferred via async
       fetchAll(token);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -304,7 +281,7 @@ export default function DashboardPage() {
 
   // ── Render helpers ──
 
-  const { me, totalEquity, availableUSDT, totalPnl, activeTrades, totalTrades, trades, transactions, portfolioData } = data;
+  const { me, totalEquity, availableUSDT, frozenUSDT, totalPnl, activeTrades, totalTrades, trades, transactions, portfolioData } = data;
 
   const displayName = me?.name || storeUser?.name || 'Trader';
   const shortUid = (me?.id || storeUser?.id || '').slice(0, 8) + '...';
@@ -591,53 +568,70 @@ export default function DashboardPage() {
 
         {/* Market Overview */}
         <motion.div className="glass-card p-4" variants={itemVariants}>
-          <h2 className="text-base font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
-            Market Overview
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+              Market Overview
+            </h2>
+            <button
+              className="text-sm font-medium hover:underline"
+              style={{ color: 'var(--accent-cyan)', background: 'none', border: 'none', cursor: 'pointer' }}
+              onClick={() => navigate(Pages.MARKETS)}
+            >
+              View All
+            </button>
+          </div>
           <div className="space-y-1 max-h-[320px] overflow-y-auto pr-1">
-            {marketCoins.map((coin) => (
-              <div
-                key={coin.pair}
-                className="flex items-center justify-between py-2.5 px-2 rounded-lg transition-colors"
-                style={{ cursor: 'pointer' }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-secondary)')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                onClick={() => navigate(Pages.TRADING)}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="flex items-center justify-center rounded-full"
-                    style={{
-                      width: 36,
-                      height: 36,
-                      background: 'var(--bg-primary)',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: 'var(--text-secondary)',
-                    }}
-                  >
-                    {coin.pair.replace('/USDT', '').slice(0, 2)}
+            {COINS.slice(0, 8).map((coin) => {
+              const base = getBaseSymbol(coin.symbol);
+              const pairLabel = `${base}/USDT`;
+              const isPositive = coin.change24h >= 0;
+              return (
+                <div
+                  key={coin.symbol}
+                  className="flex items-center justify-between py-2.5 px-2 rounded-lg transition-colors"
+                  style={{ cursor: 'pointer' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-secondary)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  onClick={() => {
+                    setSelectedCoin(coin.symbol);
+                    navigate(Pages.TRADING);
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="flex items-center justify-center rounded-full"
+                      style={{
+                        width: 36,
+                        height: 36,
+                        background: `${coin.color}20`,
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: coin.color,
+                      }}
+                    >
+                      {coin.icon}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                        {pairLabel}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                      {coin.pair}
+                  <div className="text-right">
+                    <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                      {fmtPrice(coin.price)}
+                    </div>
+                    <div
+                      className="text-xs font-medium"
+                      style={{ color: isPositive ? 'var(--accent-green)' : 'var(--accent-red)' }}
+                    >
+                      {isPositive ? '+' : ''}
+                      {coin.change24h.toFixed(2)}%
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                    {fmtPrice(coin.price)}
-                  </div>
-                  <div
-                    className="text-xs font-medium"
-                    style={{ color: coin.change >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}
-                  >
-                    {coin.change >= 0 ? '+' : ''}
-                    {coin.change.toFixed(2)}%
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </motion.div>
       </div>

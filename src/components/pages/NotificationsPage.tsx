@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BarChart2,
@@ -12,6 +12,8 @@ import {
   Bell,
   CheckCheck,
   Inbox,
+  RefreshCw,
+  AlertTriangle,
 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 
@@ -21,10 +23,15 @@ type FilterTab = 'all' | 'unread' | NotificationType;
 interface Notification {
   id: string;
   type: NotificationType;
+  priority?: string;
   title: string;
   message: string;
-  time: string;
   read: boolean;
+  actionUrl?: string;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+  // Derived display field
+  time: string;
 }
 
 const filterTabs: { key: FilterTab; label: string }[] = [
@@ -36,88 +43,45 @@ const filterTabs: { key: FilterTab; label: string }[] = [
   { key: 'system', label: 'System' },
 ];
 
-const initialNotifications: Notification[] = [
-  {
-    id: '1',
-    type: 'trade',
-    title: 'Trade Executed',
-    message: 'Your buy order for 0.15 BTC at $67,245.30 has been filled successfully.',
-    time: '2 hours ago',
-    read: false,
-  },
-  {
-    id: '2',
-    type: 'security',
-    title: 'New Login Detected',
-    message: 'A new login was detected from Chrome on macOS (IP: 192.168.1.105).',
-    time: '3 hours ago',
-    read: false,
-  },
-  {
-    id: '3',
-    type: 'wallet',
-    title: 'Deposit Confirmed',
-    message: 'Your deposit of 5,000 USDT has been confirmed and credited to your account.',
-    time: '5 hours ago',
-    read: false,
-  },
-  {
-    id: '4',
-    type: 'commission',
-    title: 'Commission Earned',
-    message: 'You earned $12.50 commission from your referral Alex M. trading activity.',
-    time: 'Yesterday',
-    read: false,
-  },
-  {
-    id: '5',
-    type: 'system',
-    title: 'System Maintenance',
-    message: 'Scheduled maintenance on Jan 20, 2025 from 02:00–04:00 UTC. Trading may be affected.',
-    time: 'Yesterday',
-    read: true,
-  },
-  {
-    id: '6',
-    type: 'trade',
-    title: 'Stop Loss Triggered',
-    message: 'Your stop-loss order for ETH/USDT was triggered at $3,412.50. Loss: -$234.50.',
-    time: '2 days ago',
-    read: true,
-  },
-  {
-    id: '7',
-    type: 'wallet',
-    title: 'Withdrawal Processing',
-    message: 'Your withdrawal request for 2.5 ETH is being processed. Expected completion: 30 min.',
-    time: '2 days ago',
-    read: false,
-  },
-  {
-    id: '8',
-    type: 'referral',
-    title: 'New Referral Signed Up',
-    message: 'Sarah K. signed up using your referral code. You\'ll earn commission once they start trading.',
-    time: '3 days ago',
-    read: true,
-  },
-  {
-    id: '9',
-    type: 'security',
-    title: 'Password Changed',
-    message: 'Your account password was successfully changed. If this wasn\'t you, contact support.',
-    time: '3 days ago',
-    read: true,
-  },
-  {
-    id: '10',
-    type: 'system',
-    title: 'New Feature: Futures Trading',
-    message: 'Futures trading is now live! Start trading with up to 100x leverage on major pairs.',
-    time: '4 days ago',
-    read: true,
-  },
-];
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function formatRelativeTime(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHr = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHr / 24);
+  const diffWeek = Math.floor(diffDay / 7);
+  const diffMonth = Math.floor(diffDay / 30);
+
+  if (diffSec < 60) return 'Just now';
+  if (diffMin < 60) return `${diffMin} minute${diffMin !== 1 ? 's' : ''} ago`;
+  if (diffHr < 24) return `${diffHr} hour${diffHr !== 1 ? 's' : ''} ago`;
+  if (diffDay === 1) return 'Yesterday';
+  if (diffDay < 7) return `${diffDay} days ago`;
+  if (diffWeek < 5) return `${diffWeek} week${diffWeek !== 1 ? 's' : ''} ago`;
+  return `${diffMonth} month${diffMonth !== 1 ? 's' : ''} ago`;
+}
+
+function mapNotification(raw: {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  read: boolean;
+  actionUrl?: string;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+}): Notification {
+  return {
+    ...raw,
+    time: formatRelativeTime(raw.createdAt),
+  };
+}
 
 function getIcon(type: NotificationType) {
   switch (type) {
@@ -171,10 +135,160 @@ const listItemVariants = {
   exit: { opacity: 0, x: -20, transition: { duration: 0.15 } },
 };
 
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
 export default function NotificationsPage() {
-  const { setNotifications, setUnreadCount } = useStore();
+  const { token, setNotifications, setUnreadCount } = useStore();
+
+  const [notifications, setLocalNotifications] = useState<Notification[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
-  const [notifications, setLocalNotifications] = useState<Notification[]>(initialNotifications);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // -----------------------------------------------------------------------
+  // Fetch notifications from the API
+  // -----------------------------------------------------------------------
+  const fetchNotifications = useCallback(
+    async (filter?: FilterTab) => {
+      if (!token) return;
+      setLoading(true);
+      setError(null);
+
+      try {
+        const params = new URLSearchParams();
+        if (filter && filter !== 'all') {
+          if (filter === 'unread') {
+            params.set('unread', 'true');
+          } else {
+            params.set('type', filter);
+          }
+        }
+
+        const query = params.toString();
+        const url = `/api/notifications${query ? `?${query}` : ''}`;
+
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error(`Failed to fetch notifications (${res.status})`);
+        }
+
+        const data = await res.json();
+        const mapped: Notification[] = (data.notifications ?? []).map(mapNotification);
+
+        setLocalNotifications(mapped);
+        setNotifications(mapped);
+        setUnreadCount(data.unreadCount ?? mapped.filter((n) => !n.read).length);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Something went wrong';
+        setError(message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [token, setNotifications, setUnreadCount],
+  );
+
+  // Initial mount fetch
+  useEffect(() => {
+    fetchNotifications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // -----------------------------------------------------------------------
+  // Mark as read (single)
+  // -----------------------------------------------------------------------
+  const handleMarkAsRead = async (id: string) => {
+    if (!token) return;
+
+    // Optimistic update
+    const updated = notifications.map((n) =>
+      n.id === id ? { ...n, read: true } : n,
+    );
+    setLocalNotifications(updated);
+    const newUnread = updated.filter((n) => !n.read).length;
+    setNotifications(updated);
+    setUnreadCount(newUnread);
+
+    try {
+      const res = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ids: [id], read: true }),
+      });
+
+      if (!res.ok) {
+        // Revert on failure
+        setLocalNotifications(notifications);
+        setNotifications(notifications);
+        setUnreadCount(notifications.filter((n) => !n.read).length);
+      }
+    } catch {
+      // Revert on network error
+      setLocalNotifications(notifications);
+      setNotifications(notifications);
+      setUnreadCount(notifications.filter((n) => !n.read).length);
+    }
+  };
+
+  // -----------------------------------------------------------------------
+  // Mark all as read
+  // -----------------------------------------------------------------------
+  const handleMarkAllRead = async () => {
+    if (!token || unreadCount === 0) return;
+
+    // Optimistic update
+    const updated = notifications.map((n) => ({ ...n, read: true }));
+    setLocalNotifications(updated);
+    setNotifications(updated);
+    setUnreadCount(0);
+
+    try {
+      const res = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ markAllRead: true }),
+      });
+
+      if (!res.ok) {
+        // Revert on failure
+        setLocalNotifications(notifications);
+        setNotifications(notifications);
+        setUnreadCount(notifications.filter((n) => !n.read).length);
+      }
+    } catch {
+      // Revert on network error
+      setLocalNotifications(notifications);
+      setNotifications(notifications);
+      setUnreadCount(notifications.filter((n) => !n.read).length);
+    }
+  };
+
+  // -----------------------------------------------------------------------
+  // Handle filter change — refetch with query params
+  // -----------------------------------------------------------------------
+  const handleFilterChange = (tab: FilterTab) => {
+    setActiveFilter(tab);
+    fetchNotifications(tab);
+  };
+
+  // -----------------------------------------------------------------------
+  // Derived state
+  // -----------------------------------------------------------------------
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   const filteredNotifications = useMemo(() => {
     if (activeFilter === 'all') return notifications;
@@ -182,25 +296,80 @@ export default function NotificationsPage() {
     return notifications.filter((n) => n.type === activeFilter);
   }, [notifications, activeFilter]);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  // -----------------------------------------------------------------------
+  // Render: Loading skeleton
+  // -----------------------------------------------------------------------
+  const renderLoading = () => (
+    <div className="space-y-3">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <motion.div
+          key={i}
+          className="glass-card p-4 flex items-center gap-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: i * 0.05, duration: 0.25 }}
+        >
+          <div
+            className="rounded-full shrink-0 animate-pulse"
+            style={{ width: 8, height: 8, background: 'var(--accent-blue)', opacity: 0.3 }}
+          />
+          <div
+            className="rounded-lg shrink-0 animate-pulse"
+            style={{ width: 40, height: 40, background: 'var(--bg-elevated)' }}
+          />
+          <div className="flex-1 space-y-2">
+            <div
+              className="rounded animate-pulse"
+              style={{ width: '60%', height: 14, background: 'var(--bg-elevated)' }}
+            />
+            <div
+              className="rounded animate-pulse"
+              style={{ width: '90%', height: 12, background: 'var(--bg-elevated)', opacity: 0.7 }}
+            />
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  );
 
-  const handleMarkAllRead = () => {
-    const updated = notifications.map((n) => ({ ...n, read: true }));
-    setLocalNotifications(updated);
-    setNotifications(updated);
-    setUnreadCount(0);
-  };
+  // -----------------------------------------------------------------------
+  // Render: Error state
+  // -----------------------------------------------------------------------
+  const renderError = () => (
+    <motion.div
+      className="glass-card p-12 text-center"
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      <AlertTriangle
+        size={48}
+        style={{ color: 'var(--accent-amber)', margin: '0 auto 16px' }}
+      />
+      <p
+        className="text-base font-medium"
+        style={{ color: 'var(--text-secondary)' }}
+      >
+        Failed to load notifications
+      </p>
+      <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+        {error}
+      </p>
+      <motion.button
+        className="btn-secondary flex items-center gap-2 mx-auto mt-4"
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.97 }}
+        onClick={() => fetchNotifications(activeFilter)}
+      >
+        <RefreshCw size={14} />
+        Retry
+      </motion.button>
+    </motion.div>
+  );
 
-  const handleMarkAsRead = (id: string) => {
-    const updated = notifications.map((n) =>
-      n.id === id ? { ...n, read: true } : n
-    );
-    setLocalNotifications(updated);
-    const newUnread = updated.filter((n) => !n.read).length;
-    setNotifications(updated);
-    setUnreadCount(newUnread);
-  };
-
+  // -----------------------------------------------------------------------
+  // Render
+  // -----------------------------------------------------------------------
   return (
     <motion.div
       className="space-y-6 animate-fade-in"
@@ -242,7 +411,7 @@ export default function NotificationsPage() {
           return (
             <button
               key={tab.key}
-              onClick={() => setActiveFilter(tab.key)}
+              onClick={() => handleFilterChange(tab.key)}
               className="relative px-4 py-2 rounded-lg text-sm font-medium transition-colors"
               style={{
                 color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
@@ -269,8 +438,12 @@ export default function NotificationsPage() {
         })}
       </div>
 
-      {/* Notification List */}
-      {filteredNotifications.length === 0 ? (
+      {/* Content area */}
+      {loading ? (
+        renderLoading()
+      ) : error ? (
+        renderError()
+      ) : filteredNotifications.length === 0 ? (
         <motion.div
           className="glass-card p-12 text-center"
           initial={{ opacity: 0 }}

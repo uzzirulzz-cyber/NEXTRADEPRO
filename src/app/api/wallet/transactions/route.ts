@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticate } from '@/lib/rbac';
-import Transaction from '@/models/Transaction';
+import prisma from '@/lib/db';
 
 const VALID_TX_TYPES = ['DEPOSIT', 'WITHDRAW', 'TRADE', 'COMMISSION', 'REFERRAL_BONUS', 'TRANSFER'];
 
@@ -16,22 +16,23 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')));
     const typeFilter = searchParams.get('type') || '';
 
-    const filter: Record<string, any> = { userId: payload.userId };
+    const where: Record<string, any> = { userId: payload.userId };
     if (typeFilter && VALID_TX_TYPES.includes(typeFilter.toUpperCase())) {
-      filter.type = typeFilter.toUpperCase();
+      where.type = typeFilter.toUpperCase();
     }
 
     const [transactions, total] = await Promise.all([
-      Transaction.find(filter)
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .lean(),
-      Transaction.countDocuments(filter),
+      prisma.transaction.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.transaction.count({ where }),
     ]);
 
     const enriched = transactions.map((tx) => ({
-      _id: tx._id.toString(),
+      id: tx.id,
       userId: tx.userId,
       type: tx.type,
       status: tx.status,

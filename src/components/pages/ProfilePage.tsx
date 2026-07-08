@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   User,
@@ -18,14 +18,6 @@ import {
 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 
-const loginHistory = [
-  { ip: '192.168.1.105', device: 'Chrome · macOS', time: '2025-01-15 14:32' },
-  { ip: '10.0.0.42', device: 'Safari · iPhone 15', time: '2025-01-14 09:15' },
-  { ip: '172.16.0.88', device: 'Firefox · Windows 11', time: '2025-01-13 18:45' },
-  { ip: '192.168.1.105', device: 'Chrome · macOS', time: '2025-01-12 11:20' },
-  { ip: '203.0.113.50', device: 'Edge · Windows 10', time: '2025-01-11 07:05' },
-];
-
 const containerVariants = {
   hidden: { opacity: 0 },
   show: {
@@ -40,10 +32,10 @@ const itemVariants = {
 };
 
 export default function ProfilePage() {
-  const { user } = useStore();
+  const { user, token, setAuth } = useStore();
 
-  const [name, setName] = useState(user?.name || 'John Doe');
-  const [phone, setPhone] = useState(user?.phone || '+1 (555) 123-4567');
+  const [name, setName] = useState(user?.name || '');
+  const [phone, setPhone] = useState(user?.phone || '');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -52,9 +44,12 @@ export default function ProfilePage() {
   const [savingPassword, setSavingPassword] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
   const [passwordSaved, setPasswordSaved] = useState(false);
+  const [profileError, setProfileError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   const initials = name
     .split(' ')
+    .filter(Boolean)
     .map((n) => n[0])
     .join('')
     .toUpperCase()
@@ -67,31 +62,101 @@ export default function ProfilePage() {
       })
     : 'January 2024';
 
-  const handleSaveProfile = () => {
-    setSavingProfile(true);
-    setTimeout(() => {
-      setSavingProfile(false);
-      setProfileSaved(true);
-      setTimeout(() => setProfileSaved(false), 2000);
-    }, 800);
-  };
+  const lastLoginDisplay = user?.lastLogin
+    ? new Date(user.lastLogin).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : null;
 
-  const handleUpdatePassword = () => {
-    if (!currentPassword || !newPassword || !confirmPassword) return;
-    if (newPassword !== confirmPassword) {
-      alert('Passwords do not match!');
+  const handleSaveProfile = useCallback(async () => {
+    if (!name.trim()) {
+      setProfileError('Name is required.');
       return;
     }
+    setProfileError('');
+    setSavingProfile(true);
+
+    // Update local state and persist to localStorage + store
+    // (No dedicated profile-update endpoint exists for regular users,
+    //  so we save locally and show success feedback.)
+    try {
+      const updatedUser = { ...(user as NonNullable<typeof user>), name: name.trim(), phone: phone.trim() };
+
+      // Persist to localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('brock_user', JSON.stringify(updatedUser));
+      }
+
+      // Update zustand store
+      if (token) {
+        setAuth(updatedUser, token);
+      } else {
+        useStore.setState({ user: updatedUser });
+      }
+
+      setSavingProfile(false);
+      setProfileSaved(true);
+      setTimeout(() => setProfileSaved(false), 3000);
+    } catch {
+      setSavingProfile(false);
+      setProfileError('Failed to save profile.');
+    }
+  }, [name, phone, user, token, setAuth]);
+
+  const handleUpdatePassword = useCallback(async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError('All password fields are required.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters.');
+      return;
+    }
+    setPasswordError('');
     setSavingPassword(true);
-    setTimeout(() => {
+
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setPasswordError(data.error || 'Failed to update password.');
+        setSavingPassword(false);
+        return;
+      }
+
+      // If the API returned updated user data, sync it to the store
+      if (data.user && token) {
+        setAuth(data.user, token);
+      }
+
       setSavingPassword(false);
       setPasswordSaved(true);
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      setTimeout(() => setPasswordSaved(false), 2000);
-    }, 800);
-  };
+      setTimeout(() => setPasswordSaved(false), 3000);
+    } catch {
+      setSavingPassword(false);
+      setPasswordError('Network error. Please try again.');
+    }
+  }, [currentPassword, newPassword, confirmPassword, token, setAuth]);
 
   const handleDeleteAccount = () => {
     alert(
@@ -113,19 +178,19 @@ export default function ProfilePage() {
         variants={itemVariants}
       >
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
-          {/* Avatar */}
+          {/* Avatar — Brock Exchange gold → cyan gradient */}
           <div
             className="flex items-center justify-center rounded-full shrink-0"
             style={{
               width: 80,
               height: 80,
-              background: 'linear-gradient(135deg, #E53935, #FFD700)',
+              background: 'linear-gradient(135deg, #F59E0B, #06B6D4)',
               fontSize: 28,
               fontWeight: 700,
               color: '#fff',
             }}
           >
-            {initials}
+            {initials || 'U'}
           </div>
           {/* Info */}
           <div className="text-center sm:text-left">
@@ -134,14 +199,14 @@ export default function ProfilePage() {
                 className="text-2xl font-bold"
                 style={{ color: 'var(--text-primary)' }}
               >
-                {name}
+                {name || user?.name || 'User'}
               </h1>
               <span className="badge badge-blue">
                 {user?.role || 'Trader'}
               </span>
             </div>
             <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-              {user?.email || 'john.doe@example.com'}
+              {user?.email || 'user@example.com'}
             </p>
             <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
               Member since {memberSince}
@@ -188,7 +253,7 @@ export default function ProfilePage() {
             <input
               type="email"
               className="input-field"
-              value={user?.email || 'john.doe@example.com'}
+              value={user?.email || ''}
               disabled
               style={{
                 opacity: 0.5,
@@ -214,7 +279,7 @@ export default function ProfilePage() {
             />
           </div>
         </div>
-        <div className="mt-5 flex items-center gap-3">
+        <div className="mt-5 flex flex-wrap items-center gap-3">
           <motion.button
             className="btn-primary flex items-center gap-2"
             whileHover={{ scale: 1.03 }}
@@ -229,6 +294,11 @@ export default function ProfilePage() {
           {profileSaved && (
             <span className="text-sm text-green" style={{ fontWeight: 500 }}>
               Profile updated successfully
+            </span>
+          )}
+          {profileError && (
+            <span className="text-sm" style={{ color: 'var(--accent-red)', fontWeight: 500 }}>
+              {profileError}
             </span>
           )}
         </div>
@@ -301,7 +371,7 @@ export default function ProfilePage() {
               />
             </div>
           </div>
-          <div className="mt-4 flex items-center gap-3">
+          <div className="mt-4 flex flex-wrap items-center gap-3">
             <motion.button
               className="btn-primary flex items-center gap-2"
               whileHover={{ scale: 1.03 }}
@@ -316,6 +386,11 @@ export default function ProfilePage() {
             {passwordSaved && (
               <span className="text-sm text-green" style={{ fontWeight: 500 }}>
                 Password updated successfully
+              </span>
+            )}
+            {passwordError && (
+              <span className="text-sm" style={{ color: 'var(--accent-red)', fontWeight: 500 }}>
+                {passwordError}
               </span>
             )}
           </div>
@@ -383,9 +458,8 @@ export default function ProfilePage() {
             </h3>
           </div>
           <div className="space-y-3">
-            {loginHistory.map((entry, i) => (
+            {lastLoginDisplay ? (
               <div
-                key={i}
                 className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 p-3 rounded-lg"
                 style={{ background: 'var(--bg-primary)' }}
               >
@@ -399,10 +473,10 @@ export default function ProfilePage() {
                       className="text-sm font-medium"
                       style={{ color: 'var(--text-primary)' }}
                     >
-                      {entry.device}
+                      Current Session
                     </p>
                     <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                      IP: {entry.ip}
+                      Last login recorded
                     </p>
                   </div>
                 </div>
@@ -410,10 +484,22 @@ export default function ProfilePage() {
                   className="text-xs shrink-0"
                   style={{ color: 'var(--text-muted)' }}
                 >
-                  {entry.time}
+                  {lastLoginDisplay}
                 </span>
               </div>
-            ))}
+            ) : null}
+            <div
+              className="flex items-center gap-3 p-3 rounded-lg"
+              style={{ background: 'var(--bg-primary)' }}
+            >
+              <Monitor
+                size={16}
+                style={{ color: 'var(--text-muted)', flexShrink: 0 }}
+              />
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                No additional login history available. Detailed session logs are available to administrators.
+              </p>
+            </div>
           </div>
         </div>
       </motion.div>

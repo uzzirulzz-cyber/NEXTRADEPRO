@@ -15,6 +15,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   ChevronDown,
+  ChevronLeft,
   Loader2,
   RefreshCw,
   TrendingUp,
@@ -193,7 +194,7 @@ function ChartTooltip({
 // ─── Main Component ───
 
 export default function TradingPage() {
-  const { token, navigate, selectedCoin, setSelectedCoin } = useStore();
+  const { token, navigate, goBack, selectedCoin, setSelectedCoin } = useStore();
 
   // Local state
   const [coinDropdownOpen, setCoinDropdownOpen] = useState(false);
@@ -268,7 +269,7 @@ export default function TradingPage() {
     return () => clearInterval(interval);
   }, [activeCoin.decimals]);
 
-  // Fetch wallet balance
+  // Fetch wallet balance via GET /api/wallet
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
@@ -277,7 +278,7 @@ export default function TradingPage() {
         if (cancelled) return;
         setWalletLoading(true);
         try {
-          const res = await fetch('/api/wallet/balance', {
+          const res = await fetch('/api/wallet', {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (res.ok && !cancelled) {
@@ -299,12 +300,12 @@ export default function TradingPage() {
     return () => { cancelled = true; };
   }, [token]);
 
-  // Expose fetchWallet for manual refresh
+  // Expose fetchWallet for manual refresh after trade
   const fetchWallet = useCallback(async () => {
     if (!token) return;
     setWalletLoading(true);
     try {
-      const res = await fetch('/api/wallet/balance', {
+      const res = await fetch('/api/wallet', {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -352,7 +353,7 @@ export default function TradingPage() {
     return estProfit;
   }, [amountNum, priceNum, leverage, duration, notionalValue]);
 
-  // Handle trade submission
+  // Handle trade submission — POST to /api/trades
   const handleSubmitTrade = async (side: 'BUY' | 'SELL') => {
     if (!token) {
       setToast({ type: 'error', message: 'Please login to place trades' });
@@ -391,9 +392,14 @@ export default function TradingPage() {
         type: orderType === 'Stop' ? 'MARKET' : orderType.toUpperCase(),
         quantity: tradeAmount,
         leverage,
-        price: currentPrice,
       };
 
+      // For MARKET orders, include the current market price
+      if (orderType === 'Market' || orderType === 'Stop') {
+        body.price = currentPrice;
+      }
+
+      // For LIMIT orders, include the user-specified limit price
       if (orderType === 'Limit') {
         body.type = 'LIMIT';
         body.price = parseFloat(limitPrice);
@@ -411,15 +417,19 @@ export default function TradingPage() {
       const data = await res.json();
 
       if (res.ok) {
+        // Success: show toast, reset form, refresh wallet balance
         setToast({
           type: 'success',
           message: `${side === 'BUY' ? 'BUY UP' : 'SELL DOWN'} ${activeCoin.name} placed successfully!`,
         });
+        // Reset form fields
+        setAmount('');
+        setLimitPrice('');
+        setStopPrice('');
+        // Refresh wallet balance
         await fetchWallet();
-        setTimeout(() => {
-          navigate(Pages.DASHBOARD);
-        }, 1500);
       } else {
+        // Error: show the error message, do NOT reset the form
         setToast({
           type: 'error',
           message: data.error || 'Trade failed. Please try again.',
@@ -434,6 +444,11 @@ export default function TradingPage() {
       setSubmitting(false);
       setSubmitSide(null);
     }
+  };
+
+  // Handle clicking a market coin row in the sidebar
+  const handleCoinRowClick = (symbol: string) => {
+    setSelectedCoin(symbol);
   };
 
   // Quick amount buttons
@@ -483,6 +498,35 @@ export default function TradingPage() {
           flexWrap: 'wrap',
         }}
       >
+        {/* Back Button */}
+        <button
+          onClick={goBack}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 38,
+            height: 38,
+            borderRadius: 10,
+            border: '1px solid var(--border-color)',
+            background: 'var(--bg-card)',
+            color: '#b9c2d0',
+            cursor: 'pointer',
+            transition: 'all 0.15s',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.borderColor = '#00e5ff';
+            (e.currentTarget as HTMLElement).style.color = '#00e5ff';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-color)';
+            (e.currentTarget as HTMLElement).style.color = '#b9c2d0';
+          }}
+          title="Go back"
+        >
+          <ChevronLeft size={18} />
+        </button>
+
         {/* Coin Dropdown */}
         <div style={{ position: 'relative' }}>
           <button
@@ -901,426 +945,540 @@ export default function TradingPage() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN - Trading Panel */}
-        <div className="trade-box" style={{ display: 'flex', flexDirection: 'column', gap: 0, height: 'fit-content' }}>
-          {/* Wallet Balance */}
-          <div style={{ padding: '16px 20px 0' }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: 16,
-              }}
-            >
-              <div>
-                <div style={{ fontSize: 12, color: '#6b7a8d', marginBottom: 4 }}>Available Balance</div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: '#ffffff' }}>
-                  {walletLoading ? (
-                    <Loader2 size={18} style={{ display: 'inline', color: '#6b7a8d' }} className="spin" />
-                  ) : (
-                    <>${formatUSD(walletBalance)}</>
-                  )}
-                </div>
-              </div>
-              <button
-                onClick={fetchWallet}
-                style={{
-                  background: 'rgba(0,229,255,0.08)',
-                  border: '1px solid rgba(0,229,255,0.2)',
-                  borderRadius: 8,
-                  padding: '6px 10px',
-                  color: '#00e5ff',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-                title="Refresh balance"
-              >
-                <RefreshCw size={14} />
-              </button>
-            </div>
-
-            {/* Price + 24h Change */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'baseline',
-                gap: 10,
-                marginBottom: 16,
-              }}
-            >
-              <span style={{ fontSize: 22, fontWeight: 800, color: '#ffffff' }}>
-                ${formatPrice(currentPrice, priceDecimals)}
-              </span>
-              <span
-                style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  padding: '3px 8px',
-                  borderRadius: 6,
-                  background: isPositive ? 'rgba(0,210,106,0.12)' : 'rgba(255,61,87,0.12)',
-                  color: isPositive ? '#00d26a' : '#ff3d57',
-                }}
-              >
-                {isPositive ? '+' : ''}{priceChange24h.toFixed(2)}%
-              </span>
-            </div>
-
-            {/* Order Type Tabs */}
-            <div
-              style={{
-                display: 'flex',
-                gap: 0,
-                marginBottom: 16,
-                background: 'rgba(255,255,255,0.03)',
-                borderRadius: 10,
-                padding: 3,
-              }}
-            >
-              {ORDER_TYPES.map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setOrderType(type)}
-                  style={{
-                    flex: 1,
-                    padding: '8px 0',
-                    border: 'none',
-                    borderRadius: 8,
-                    background: orderType === type ? 'rgba(0,229,255,0.12)' : 'transparent',
-                    color: orderType === type ? '#00e5ff' : '#6b7a8d',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  {type}
-                </button>
-              ))}
-            </div>
-
-            {/* Amount Input */}
-            <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 12, color: '#6b7a8d', display: 'block', marginBottom: 6 }}>
-                Amount ({activeCoin.symbol.replace('USDT', '')})
-              </label>
-              <div className="trade-input" style={{ position: 'relative' }}>
-                <input
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="0.00"
-                  step="any"
-                  className="trade-input"
-                  style={{
-                    width: '100%',
-                    background: '#1b2232',
-                    border: '1px solid #2d364b',
-                    borderRadius: 12,
-                    padding: '12px 80px 12px 16px',
-                    color: '#ffffff',
-                    fontSize: 15,
-                    fontWeight: 600,
-                    outline: 'none',
-                    transition: 'border-color 0.2s, box-shadow 0.2s',
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = '#00e5ff';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(0,229,255,0.1)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = '#2d364b';
-                    e.target.style.boxShadow = 'none';
-                  }}
-                />
-                <div
-                  style={{
-                    position: 'absolute',
-                    right: 12,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    fontSize: 12,
-                    color: '#6b7a8d',
-                    textAlign: 'right',
-                  }}
-                >
-                  <div style={{ fontWeight: 600 }}>≈ ${notionalValue > 0 ? formatUSD(notionalValue) : '0.00'}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Amount Buttons */}
-            <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
-              {quickAmounts.map((pct) => (
-                <button
-                  key={pct}
-                  onClick={() => handleQuickAmount(pct)}
-                  style={{
-                    flex: 1,
-                    padding: '6px 0',
-                    border: '1px solid #2d364b',
-                    borderRadius: 8,
-                    background: 'transparent',
-                    color: '#b9c2d0',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = '#00e5ff';
-                    (e.currentTarget as HTMLElement).style.color = '#00e5ff';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = '#2d364b';
-                    (e.currentTarget as HTMLElement).style.color = '#b9c2d0';
-                  }}
-                >
-                  {pct}%
-                </button>
-              ))}
-            </div>
-
-            {/* Limit Price Input (shown for Limit orders) */}
-            {orderType === 'Limit' && (
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ fontSize: 12, color: '#6b7a8d', display: 'block', marginBottom: 6 }}>
-                  Limit Price (USDT)
-                </label>
-                <input
-                  type="number"
-                  value={limitPrice}
-                  onChange={(e) => setLimitPrice(e.target.value)}
-                  placeholder={formatPrice(currentPrice, priceDecimals)}
-                  step="any"
-                  className="trade-input"
-                  style={{
-                    width: '100%',
-                    background: '#1b2232',
-                    border: '1px solid #2d364b',
-                    borderRadius: 12,
-                    padding: '12px 16px',
-                    color: '#ffffff',
-                    fontSize: 15,
-                    fontWeight: 600,
-                    outline: 'none',
-                    transition: 'border-color 0.2s, box-shadow 0.2s',
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = '#00e5ff';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(0,229,255,0.1)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = '#2d364b';
-                    e.target.style.boxShadow = 'none';
-                  }}
-                />
-              </div>
-            )}
-
-            {/* Stop Price Input (shown for Stop orders) */}
-            {orderType === 'Stop' && (
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ fontSize: 12, color: '#6b7a8d', display: 'block', marginBottom: 6 }}>
-                  Stop Price (USDT)
-                </label>
-                <input
-                  type="number"
-                  value={stopPrice}
-                  onChange={(e) => setStopPrice(e.target.value)}
-                  placeholder={formatPrice(currentPrice, priceDecimals)}
-                  step="any"
-                  className="trade-input"
-                  style={{
-                    width: '100%',
-                    background: '#1b2232',
-                    border: '1px solid #2d364b',
-                    borderRadius: 12,
-                    padding: '12px 16px',
-                    color: '#ffffff',
-                    fontSize: 15,
-                    fontWeight: 600,
-                    outline: 'none',
-                    transition: 'border-color 0.2s, box-shadow 0.2s',
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = '#00e5ff';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(0,229,255,0.1)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = '#2d364b';
-                    e.target.style.boxShadow = 'none';
-                  }}
-                />
-              </div>
-            )}
-
-            {/* Leverage Slider */}
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <label style={{ fontSize: 12, color: '#6b7a8d' }}>Leverage</label>
-                <span
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 700,
-                    color: leverage > 20 ? '#ff3d57' : leverage > 10 ? '#f5b400' : '#00e5ff',
-                  }}
-                >
-                  {leverage}x
-                </span>
-              </div>
-              <input
-                type="range"
-                min={1}
-                max={100}
-                value={leverage}
-                onChange={(e) => setLeverage(parseInt(e.target.value))}
-                style={{
-                  width: '100%',
-                  height: 6,
-                  borderRadius: 3,
-                  appearance: 'none',
-                  background: `linear-gradient(to right, #00e5ff 0%, #f5b400 ${leverage}%, #2d364b ${leverage}%, #2d364b 100%)`,
-                  outline: 'none',
-                  cursor: 'pointer',
-                }}
-              />
+        {/* RIGHT COLUMN - Trading Panel + Market Sidebar */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Trading Panel */}
+          <div className="trade-box" style={{ display: 'flex', flexDirection: 'column', gap: 0, height: 'fit-content' }}>
+            {/* Wallet Balance */}
+            <div style={{ padding: '16px 20px 0' }}>
               <div
                 style={{
                   display: 'flex',
+                  alignItems: 'center',
                   justifyContent: 'space-between',
-                  marginTop: 4,
-                  fontSize: 11,
-                  color: '#6b7a8d',
+                  marginBottom: 16,
                 }}
               >
-                <span>1x</span>
-                <span>25x</span>
-                <span>50x</span>
-                <span>75x</span>
-                <span>100x</span>
+                <div>
+                  <div style={{ fontSize: 12, color: '#6b7a8d', marginBottom: 4 }}>Available Balance</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: '#ffffff' }}>
+                    {walletLoading ? (
+                      <Loader2 size={18} style={{ display: 'inline', color: '#6b7a8d' }} className="spin" />
+                    ) : (
+                      <>${formatUSD(walletBalance)}</>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={fetchWallet}
+                  style={{
+                    background: 'rgba(0,229,255,0.08)',
+                    border: '1px solid rgba(0,229,255,0.2)',
+                    borderRadius: 8,
+                    padding: '6px 10px',
+                    color: '#00e5ff',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                  title="Refresh balance"
+                >
+                  <RefreshCw size={14} />
+                </button>
               </div>
-            </div>
 
-            {/* Duration Selection */}
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 12, color: '#6b7a8d', display: 'block', marginBottom: 8 }}>
-                Duration
-              </label>
-              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                {DURATIONS.map((d) => (
+              {/* Price + 24h Change */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  gap: 10,
+                  marginBottom: 16,
+                }}
+              >
+                <span style={{ fontSize: 22, fontWeight: 800, color: '#ffffff' }}>
+                  ${formatPrice(currentPrice, priceDecimals)}
+                </span>
+                <span
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    padding: '3px 8px',
+                    borderRadius: 6,
+                    background: isPositive ? 'rgba(0,210,106,0.12)' : 'rgba(255,61,87,0.12)',
+                    color: isPositive ? '#00d26a' : '#ff3d57',
+                  }}
+                >
+                  {isPositive ? '+' : ''}{priceChange24h.toFixed(2)}%
+                </span>
+              </div>
+
+              {/* Order Type Tabs */}
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 0,
+                  marginBottom: 16,
+                  background: 'rgba(255,255,255,0.03)',
+                  borderRadius: 10,
+                  padding: 3,
+                }}
+              >
+                {ORDER_TYPES.map((type) => (
                   <button
-                    key={d}
-                    onClick={() => setDuration(d)}
+                    key={type}
+                    onClick={() => setOrderType(type)}
                     style={{
-                      padding: '6px 12px',
+                      flex: 1,
+                      padding: '8px 0',
+                      border: 'none',
                       borderRadius: 8,
-                      border: '1px solid',
-                      borderColor: duration === d ? '#00e5ff' : '#2d364b',
-                      background: duration === d ? 'rgba(0,229,255,0.08)' : 'transparent',
-                      color: duration === d ? '#00e5ff' : '#6b7a8d',
-                      fontSize: 12,
+                      background: orderType === type ? 'rgba(0,229,255,0.12)' : 'transparent',
+                      color: orderType === type ? '#00e5ff' : '#6b7a8d',
+                      fontSize: 13,
                       fontWeight: 600,
                       cursor: 'pointer',
                       transition: 'all 0.15s',
                     }}
                   >
-                    {d}
+                    {type}
                   </button>
                 ))}
               </div>
-            </div>
 
-            {/* Estimated P&L */}
-            {amountNum > 0 && (
-              <div
-                style={{
-                  padding: '12px 16px',
-                  borderRadius: 12,
-                  background: 'rgba(0,229,255,0.04)',
-                  border: '1px solid rgba(0,229,255,0.1)',
-                  marginBottom: 16,
-                }}
-              >
-                <div style={{ fontSize: 12, color: '#6b7a8d', marginBottom: 4 }}>Estimated P&L</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#00e5ff' }}>
-                  +${formatUSD(estimatedPnl)}
-                </div>
-                <div style={{ fontSize: 11, color: '#6b7a8d', marginTop: 2 }}>
-                  Margin: ${formatUSD(actualMargin)} · Notional: ${formatUSD(notionalValue)}
+              {/* Amount Input */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 12, color: '#6b7a8d', display: 'block', marginBottom: 6 }}>
+                  Amount ({activeCoin.symbol.replace('USDT', '')})
+                </label>
+                <div className="trade-input" style={{ position: 'relative' }}>
+                  <input
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="0.00"
+                    step="any"
+                    className="trade-input"
+                    style={{
+                      width: '100%',
+                      background: '#1b2232',
+                      border: '1px solid #2d364b',
+                      borderRadius: 12,
+                      padding: '12px 80px 12px 16px',
+                      color: '#ffffff',
+                      fontSize: 15,
+                      fontWeight: 600,
+                      outline: 'none',
+                      transition: 'border-color 0.2s, box-shadow 0.2s',
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#00e5ff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(0,229,255,0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#2d364b';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      right: 12,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      fontSize: 12,
+                      color: '#6b7a8d',
+                      textAlign: 'right',
+                    }}
+                  >
+                    <div style={{ fontWeight: 600 }}>≈ ${notionalValue > 0 ? formatUSD(notionalValue) : '0.00'}</div>
+                  </div>
                 </div>
               </div>
-            )}
 
-            {/* BUY UP Button */}
-            <button
-              className="buy-up"
-              onClick={() => handleSubmitTrade('BUY')}
-              disabled={submitting}
+              {/* Quick Amount Buttons */}
+              <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+                {quickAmounts.map((pct) => (
+                  <button
+                    key={pct}
+                    onClick={() => handleQuickAmount(pct)}
+                    style={{
+                      flex: 1,
+                      padding: '6px 0',
+                      border: '1px solid #2d364b',
+                      borderRadius: 8,
+                      background: 'transparent',
+                      color: '#b9c2d0',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.borderColor = '#00e5ff';
+                      (e.currentTarget as HTMLElement).style.color = '#00e5ff';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.borderColor = '#2d364b';
+                      (e.currentTarget as HTMLElement).style.color = '#b9c2d0';
+                    }}
+                  >
+                    {pct}%
+                  </button>
+                ))}
+              </div>
+
+              {/* Limit Price Input (shown for Limit orders) */}
+              {orderType === 'Limit' && (
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 12, color: '#6b7a8d', display: 'block', marginBottom: 6 }}>
+                    Limit Price (USDT)
+                  </label>
+                  <input
+                    type="number"
+                    value={limitPrice}
+                    onChange={(e) => setLimitPrice(e.target.value)}
+                    placeholder={formatPrice(currentPrice, priceDecimals)}
+                    step="any"
+                    className="trade-input"
+                    style={{
+                      width: '100%',
+                      background: '#1b2232',
+                      border: '1px solid #2d364b',
+                      borderRadius: 12,
+                      padding: '12px 16px',
+                      color: '#ffffff',
+                      fontSize: 15,
+                      fontWeight: 600,
+                      outline: 'none',
+                      transition: 'border-color 0.2s, box-shadow 0.2s',
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#00e5ff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(0,229,255,0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#2d364b';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Stop Price Input (shown for Stop orders) */}
+              {orderType === 'Stop' && (
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 12, color: '#6b7a8d', display: 'block', marginBottom: 6 }}>
+                    Stop Price (USDT)
+                  </label>
+                  <input
+                    type="number"
+                    value={stopPrice}
+                    onChange={(e) => setStopPrice(e.target.value)}
+                    placeholder={formatPrice(currentPrice, priceDecimals)}
+                    step="any"
+                    className="trade-input"
+                    style={{
+                      width: '100%',
+                      background: '#1b2232',
+                      border: '1px solid #2d364b',
+                      borderRadius: 12,
+                      padding: '12px 16px',
+                      color: '#ffffff',
+                      fontSize: 15,
+                      fontWeight: 600,
+                      outline: 'none',
+                      transition: 'border-color 0.2s, box-shadow 0.2s',
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#00e5ff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(0,229,255,0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#2d364b';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Leverage Slider */}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <label style={{ fontSize: 12, color: '#6b7a8d' }}>Leverage</label>
+                  <span
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: leverage > 20 ? '#ff3d57' : leverage > 10 ? '#f5b400' : '#00e5ff',
+                    }}
+                  >
+                    {leverage}x
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={1}
+                  max={100}
+                  value={leverage}
+                  onChange={(e) => setLeverage(parseInt(e.target.value))}
+                  style={{
+                    width: '100%',
+                    height: 6,
+                    borderRadius: 3,
+                    appearance: 'none',
+                    background: `linear-gradient(to right, #00e5ff 0%, #f5b400 ${leverage}%, #2d364b ${leverage}%, #2d364b 100%)`,
+                    outline: 'none',
+                    cursor: 'pointer',
+                  }}
+                />
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginTop: 4,
+                    fontSize: 11,
+                    color: '#6b7a8d',
+                  }}
+                >
+                  <span>1x</span>
+                  <span>25x</span>
+                  <span>50x</span>
+                  <span>75x</span>
+                  <span>100x</span>
+                </div>
+              </div>
+
+              {/* Duration Selection */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: 12, color: '#6b7a8d', display: 'block', marginBottom: 8 }}>
+                  Duration
+                </label>
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {DURATIONS.map((d) => (
+                    <button
+                      key={d}
+                      onClick={() => setDuration(d)}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: 8,
+                        border: '1px solid',
+                        borderColor: duration === d ? '#00e5ff' : '#2d364b',
+                        background: duration === d ? 'rgba(0,229,255,0.08)' : 'transparent',
+                        color: duration === d ? '#00e5ff' : '#6b7a8d',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Estimated P&L */}
+              {amountNum > 0 && (
+                <div
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: 12,
+                    background: 'rgba(0,229,255,0.04)',
+                    border: '1px solid rgba(0,229,255,0.1)',
+                    marginBottom: 16,
+                  }}
+                >
+                  <div style={{ fontSize: 12, color: '#6b7a8d', marginBottom: 4 }}>Estimated P&L</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#00e5ff' }}>
+                    +${formatUSD(estimatedPnl)}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#6b7a8d', marginTop: 2 }}>
+                    Margin: ${formatUSD(actualMargin)} · Notional: ${formatUSD(notionalValue)}
+                  </div>
+                </div>
+              )}
+
+              {/* BUY UP Button */}
+              <button
+                className="buy-up"
+                onClick={() => handleSubmitTrade('BUY')}
+                disabled={submitting}
+                style={{
+                  width: '100%',
+                  padding: '16px 0',
+                  borderRadius: 14,
+                  border: 'none',
+                  background: submitting && submitSide === 'BUY'
+                    ? 'rgba(0,210,106,0.5)'
+                    : 'linear-gradient(135deg, #00d26a 0%, #00a854 100%)',
+                  color: '#ffffff',
+                  fontSize: 16,
+                  fontWeight: 700,
+                  cursor: submitting ? 'not-allowed' : 'pointer',
+                  marginBottom: 10,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  transition: 'opacity 0.2s',
+                  opacity: submitting && submitSide !== 'BUY' ? 0.5 : 1,
+                  letterSpacing: 0.5,
+                }}
+              >
+                {submitting && submitSide === 'BUY' ? (
+                  <Loader2 size={20} className="spin" />
+                ) : (
+                  <ArrowUpRight size={20} />
+                )}
+                {submitting && submitSide === 'BUY' ? 'Placing Order...' : 'BUY UP / CALL'}
+              </button>
+
+              {/* SELL DOWN Button */}
+              <button
+                className="buy-down"
+                onClick={() => handleSubmitTrade('SELL')}
+                disabled={submitting}
+                style={{
+                  width: '100%',
+                  padding: '16px 0',
+                  borderRadius: 14,
+                  border: 'none',
+                  background: submitting && submitSide === 'SELL'
+                    ? 'rgba(255,61,87,0.5)'
+                    : 'linear-gradient(135deg, #ff3d57 0%, #d42e44 100%)',
+                  color: '#ffffff',
+                  fontSize: 16,
+                  fontWeight: 700,
+                  cursor: submitting ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  transition: 'opacity 0.2s',
+                  opacity: submitting && submitSide !== 'SELL' ? 0.5 : 1,
+                  letterSpacing: 0.5,
+                }}
+              >
+                {submitting && submitSide === 'SELL' ? (
+                  <Loader2 size={20} className="spin" />
+                ) : (
+                  <ArrowDownRight size={20} />
+                )}
+                {submitting && submitSide === 'SELL' ? 'Placing Order...' : 'SELL DOWN / PUT'}
+              </button>
+            </div>
+          </div>
+
+          {/* Market Coins Sidebar */}
+          <div
+            className="glass-card"
+            style={{
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-color)',
+              borderRadius: 16,
+              padding: '14px 16px',
+              flex: '1 1 auto',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <div
               style={{
-                width: '100%',
-                padding: '16px 0',
-                borderRadius: 14,
-                border: 'none',
-                background: submitting && submitSide === 'BUY'
-                  ? 'rgba(0,210,106,0.5)'
-                  : 'linear-gradient(135deg, #00d26a 0%, #00a854 100%)',
-                color: '#ffffff',
-                fontSize: 16,
+                fontSize: 13,
                 fontWeight: 700,
-                cursor: submitting ? 'not-allowed' : 'pointer',
+                color: '#b9c2d0',
                 marginBottom: 10,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                transition: 'opacity 0.2s',
-                opacity: submitting && submitSide !== 'BUY' ? 0.5 : 1,
+                textTransform: 'uppercase',
                 letterSpacing: 0.5,
               }}
             >
-              {submitting && submitSide === 'BUY' ? (
-                <Loader2 size={20} className="spin" />
-              ) : (
-                <ArrowUpRight size={20} />
-              )}
-              {submitting && submitSide === 'BUY' ? 'Placing Order...' : 'BUY UP / CALL'}
-            </button>
+              Markets
+            </div>
 
-            {/* SELL DOWN Button */}
-            <button
-              className="buy-down"
-              onClick={() => handleSubmitTrade('SELL')}
-              disabled={submitting}
+            {/* Table Header */}
+            <div
               style={{
-                width: '100%',
-                padding: '16px 0',
-                borderRadius: 14,
-                border: 'none',
-                background: submitting && submitSide === 'SELL'
-                  ? 'rgba(255,61,87,0.5)'
-                  : 'linear-gradient(135deg, #ff3d57 0%, #d42e44 100%)',
-                color: '#ffffff',
-                fontSize: 16,
-                fontWeight: 700,
-                cursor: submitting ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                transition: 'opacity 0.2s',
-                opacity: submitting && submitSide !== 'SELL' ? 0.5 : 1,
-                letterSpacing: 0.5,
+                display: 'grid',
+                gridTemplateColumns: '1fr auto auto',
+                padding: '0 10px 8px',
+                fontSize: 11,
+                color: '#6b7a8d',
+                fontWeight: 600,
+                borderBottom: '1px solid rgba(42,48,66,0.4)',
+                marginBottom: 6,
               }}
             >
-              {submitting && submitSide === 'SELL' ? (
-                <Loader2 size={20} className="spin" />
-              ) : (
-                <ArrowDownRight size={20} />
-              )}
-              {submitting && submitSide === 'SELL' ? 'Placing Order...' : 'SELL DOWN / PUT'}
-            </button>
+              <span>Symbol</span>
+              <span style={{ textAlign: 'right' }}>Price</span>
+              <span style={{ textAlign: 'right', minWidth: 56 }}>24h</span>
+            </div>
+
+            {/* Coin Rows */}
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              {COINS.map((coin) => {
+                const isActive = activeCoin.symbol === coin.symbol;
+                const change = parseFloat(((Math.random() - 0.4) * 5).toFixed(2));
+                const positive = change >= 0;
+                return (
+                  <button
+                    key={coin.symbol}
+                    onClick={() => handleCoinRowClick(coin.symbol)}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr auto auto',
+                      alignItems: 'center',
+                      width: '100%',
+                      padding: '9px 10px',
+                      border: 'none',
+                      borderRadius: 8,
+                      background: isActive ? 'rgba(0,229,255,0.06)' : 'transparent',
+                      color: isActive ? '#ffffff' : '#b9c2d0',
+                      fontSize: 13,
+                      fontWeight: isActive ? 600 : 400,
+                      cursor: 'pointer',
+                      transition: 'background 0.15s',
+                      marginBottom: 2,
+                      textAlign: 'left',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive)
+                        (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive)
+                        (e.currentTarget as HTMLElement).style.background = 'transparent';
+                    }}
+                  >
+                    <span style={{ fontWeight: isActive ? 700 : 500 }}>
+                      {coin.name}
+                    </span>
+                    <span
+                      style={{
+                        textAlign: 'right',
+                        color: '#e2e8f0',
+                        fontSize: 12,
+                        fontWeight: 500,
+                      }}
+                    >
+                      ${formatPrice(coin.basePrice, coin.decimals)}
+                    </span>
+                    <span
+                      style={{
+                        textAlign: 'right',
+                        minWidth: 56,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: positive ? '#00d26a' : '#ff3d57',
+                      }}
+                    >
+                      {positive ? '+' : ''}{change.toFixed(2)}%
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

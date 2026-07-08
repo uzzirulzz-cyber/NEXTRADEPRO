@@ -1,17 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticate } from '@/lib/rbac';
-import Wallet from '@/models/Wallet';
-import Transaction from '@/models/Transaction';
-import WithdrawalRequest from '@/models/WithdrawalRequest';
+import prisma from '@/lib/db';
 
 const VALID_METHODS = ['JAZZCASH', 'EASYPAISA', 'BANK_TRANSFER', 'VISA', 'MASTERCARD'];
-
-interface BalanceEntry {
-  currency: string;
-  amount: number;
-  frozen: number;
-}
 
 // POST /api/wallet/withdraw — user-initiated withdrawal
 export async function POST(request: NextRequest) {
@@ -54,8 +46,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Amount too small after fee deduction' }, { status: 400 });
     }
 
-    // ── Find SPOT wallet ──
-    const wallet = await Wallet.findOne({ userId: payload.userId, type: 'SPOT' });
+    // ── Find SPOT wallet with balances ──
+    const wallet = await prisma.wallet.findFirst({
+      where: { userId: payload.userId, type: 'SPOT' },
+      include: { balances: true },
+    });
     if (!wallet) {
       return NextResponse.json({ error: 'Wallet not found. Please create a wallet first.' }, { status: 400 });
     }
@@ -64,9 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Check sufficient balance ──
-    const balanceEntry = wallet.balances.find(
-      (b: BalanceEntry) => b.currency === upperCurrency
-    ) as BalanceEntry | undefined;
+    const balanceEntry = wallet.balances.find((b) => b.currency === upperCurrency);
 
     if (!balanceEntry || balanceEntry.amount < amount) {
       const available = balanceEntry ? balanceEntry.amount : 0;
@@ -77,67 +70,50 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Freeze the amount ──
-    balanceEntry.amount -= amount;
-    balanceEntry.frozen += amount;
+    await prisma.walletBalance.update({
+      where: { id: balanceEntry.id },
+      data: { amount: { decrement: amount }, frozen: { increment: amount } },
+    });
 
-    wallet.totalEquity = wallet.balances.reduce(
-      (sum: number, b: BalanceEntry) => sum + b.amount + b.frozen,
-      0
-    );
-    await wallet.save();
-
-    // ── Create WithdrawalRequest ──
-    const withdrawal = await WithdrawalRequest.create({
-      userId: payload.userId,
-      currency: upperCurrency,
-      amount,
-      fee,
-      netAmount,
-      method,
-      accountNumber: accountNumber.trim(),
-      accountName: accountName.trim(),
-      status: 'PENDING',
+    // ── Recalculate wallet totalEquity ──
+    const updatedBalances = await prisma.walletBalance.findMany({
+      where: { walletId: wallet.id },
+    });
+    const newTotalEquity = updatedBalances.reduce((sum, b) => sum + b.amount + b.frozen, 0);
+    await prisma.wallet.update({
+      where: { id: wallet.id },
+      data: { totalEquity: newTotalEquity },
     });
 
     // ── Create PENDING Transaction record ──
-    const tx = await Transaction.create({
-      userId: payload.userId,
-      type: 'WITHDRAW',
-      status: 'PENDING',
-      currency: upperCurrency,
-      amount,
-      fee,
-      description: `Withdrawal request: ${amount} ${upperCurrency} via ${method}`,
-      metadata: {
-        withdrawalId: withdrawal._id.toString(),
-        method,
-        accountNumber: accountNumber.trim(),
-        accountName: accountName.trim(),
+    const tx = await prisma.transaction.create({
+      data: {
+        userId: payload.userId,
+        type: 'WITHDRAW',
+        status: 'PENDING',
+        currency: upperCurrency,
+        amount,
+        fee,
+        description: `Withdrawal request: ${amount} ${upperCurrency} via ${method}`,
+        metadata: {
+          method,
+          accountNumber: accountNumber.trim(),
+          accountName: accountName.trim(),
+          netAmount,
+        },
       },
     });
 
     return NextResponse.json({
       message: 'Withdrawal request submitted successfully',
-      withdrawal: {
-        _id: withdrawal._id.toString(),
-        userId: withdrawal.userId,
-        currency: withdrawal.currency,
-        amount: withdrawal.amount,
-        fee: withdrawal.fee,
-        netAmount: withdrawal.netAmount,
-        method: withdrawal.method,
-        accountNumber: withdrawal.accountNumber,
-        accountName: withdrawal.accountName,
-        status: withdrawal.status,
-        createdAt: withdrawal.createdAt,
-      },
       transaction: {
-        _id: tx._id.toString(),
+        id: tx.id,
         type: tx.type,
         status: tx.status,
         currency: tx.currency,
         amount: tx.amount,
         fee: tx.fee,
+        description: tx.description,
       },
     });
   } catch (error: unknown) {

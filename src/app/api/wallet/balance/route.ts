@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticate } from '@/lib/rbac';
-import Wallet from '@/models/Wallet';
+import prisma from '@/lib/db';
 
 // GET /api/wallet/balance — get user's SPOT wallet balance
 export async function GET(request: NextRequest) {
@@ -9,26 +8,32 @@ export async function GET(request: NextRequest) {
     const { payload, response } = authenticate(request);
     if (response) return response;
 
-    let wallet = await Wallet.findOne({ userId: payload.userId, type: 'SPOT' }).lean();
+    let wallet = await prisma.wallet.findFirst({
+      where: { userId: payload.userId, type: 'SPOT' },
+      include: { balances: true },
+    });
 
     // Create wallet with default PKR and USDT balances if not found
     if (!wallet) {
-      const newWallet = await Wallet.create({
-        userId: payload.userId,
-        type: 'SPOT',
-        status: 'ACTIVE',
-        balances: [
-          { currency: 'PKR', amount: 0, frozen: 0 },
-          { currency: 'USDT', amount: 0, frozen: 0 },
-        ],
-        totalEquity: 0,
+      wallet = await prisma.wallet.create({
+        data: {
+          userId: payload.userId,
+          type: 'SPOT',
+          status: 'ACTIVE',
+          totalEquity: 0,
+          balances: {
+            create: [
+              { currency: 'PKR', amount: 0, frozen: 0 },
+              { currency: 'USDT', amount: 0, frozen: 0 },
+            ],
+          },
+        },
+        include: { balances: true },
       });
-
-      wallet = newWallet.toObject();
     }
 
     return NextResponse.json({
-      _id: wallet._id.toString(),
+      id: wallet.id,
       userId: wallet.userId,
       type: wallet.type,
       status: wallet.status,
