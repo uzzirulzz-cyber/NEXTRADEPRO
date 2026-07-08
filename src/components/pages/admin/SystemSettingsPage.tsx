@@ -29,8 +29,8 @@ interface SystemSettings {
 }
 
 const defaultSettings: SystemSettings = {
-  platformName: 'NexTrade Pro',
-  supportEmail: 'support@nextrade.pro',
+  platformName: 'Brock Exchange',
+  supportEmail: 'support@brock.exchange',
   maintenanceMode: false,
   allowRegistration: true,
   requireInvitationCode: false,
@@ -147,7 +147,7 @@ export default function SystemSettingsPage() {
       {/* Platform */}
       <motion.div className="glass-card p-6" variants={itemVariants}>
         <h2 className="text-base font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-          <Settings size={18} style={{ color: 'var(--accent-blue)' }} />
+          <Settings size={18} style={{ color: 'var(--accent-cyan)' }} />
           Platform
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

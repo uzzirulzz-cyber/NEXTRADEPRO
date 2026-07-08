@@ -149,10 +149,10 @@ export default function UserManagementPage() {
   }
 
   const statCards = [
-    { label: 'Total Users', value: stats.total, icon: Users, color: '#E53935' },
-    { label: 'Active Users', value: stats.active, icon: UserCheck, color: '#22c55e' },
-    { label: 'New Today', value: stats.newToday, icon: UserPlus, color: '#f59e0b' },
-    { label: 'Suspended', value: stats.suspended, icon: UserX, color: '#FF4757' },
+    { label: 'Total Users', value: stats.total, icon: Users, color: '#ff3d57' },
+    { label: 'Active Users', value: stats.active, icon: UserCheck, color: '#00d26a' },
+    { label: 'New Today', value: stats.newToday, icon: UserPlus, color: '#f5b400' },
+    { label: 'Suspended', value: stats.suspended, icon: UserX, color: '#ff3d57' },
   ];
 
   if (loading && users.length === 0) {

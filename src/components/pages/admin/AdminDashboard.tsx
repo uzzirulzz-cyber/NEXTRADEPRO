@@ -268,8 +268,8 @@ export default function AdminDashboard() {
                   <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="depGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#22c55e" stopOpacity={0.2} />
-                  <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#00d26a" stopOpacity={0.2} />
+                  <stop offset="100%" stopColor="#00d26a" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="witGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#f97316" stopOpacity={0.2} />
@@ -302,7 +302,7 @@ export default function AdminDashboard() {
                 type="monotone"
                 dataKey="deposits"
                 name="Deposits"
-                stroke="#22c55e"
+                stroke="#00d26a"
                 strokeWidth={2}
                 fill="url(#depGrad)"
               />

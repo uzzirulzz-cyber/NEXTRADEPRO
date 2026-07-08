@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, Ticket, Loader2, Eye, EyeOff, ArrowLeft, Phone } from 'lucide-react';
 import { useStore, Pages } from '@/store/useStore';
@@ -167,7 +168,7 @@ export default function RegisterPage() {
           height: 400,
           top: '-10%',
           left: '-5%',
-          background: 'radial-gradient(circle, rgba(229,57,53,0.08) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(245,180,0,0.08) 0%, transparent 70%)',
         }}
       />
       <div
@@ -205,16 +206,16 @@ export default function RegisterPage() {
             style={{
               width: 48,
               height: 48,
-              background: 'linear-gradient(135deg, #E53935, #FFD700)',
+              background: 'var(--gradient)',
             }}
           >
-            <span style={{ fontSize: 24 }}>&#9889;</span>
+            <Image src="/logo.png" alt="Brock Exchange" width={28} height={28} style={{ borderRadius: 6 }} />
           </div>
           <h1 className="gradient-text" style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em' }}>
             Create Account
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 4 }}>
-            Join NexTrade Pro and start trading
+            Join Brock Exchange and start trading
           </p>
         </div>
 
@@ -489,7 +490,7 @@ export default function RegisterPage() {
           Already have an account?{' '}
           <button
             className="bg-transparent border-none cursor-pointer"
-            style={{ color: 'var(--accent-blue)', fontWeight: 600, fontSize: 13 }}
+            style={{ color: 'var(--accent-cyan)', fontWeight: 600, fontSize: 13 }}
             onClick={() => navigate(Pages.LOGIN)}
           >
             Sign In

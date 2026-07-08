@@ -18,7 +18,7 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' as const } },
 };
 
-const COLORS = ['#E53935', '#22c55e', '#f59e0b', '#8b5cf6', '#FF4757', '#06b6d4'];
+const COLORS = ['#ff3d57', '#00d26a', '#f5b400', '#8b5cf6', '#06b6d4', '#22d3ee'];
 
 function generateMockRevenueData() {
   const data = [];
@@ -56,7 +56,7 @@ function generateMockPairData() {
 function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name?: string; color?: string }>; label?: string }) {
   if (active && payload && payload.length) {
     return (
-      <div style={{ background: 'rgba(10, 15, 26, 0.95)', border: '1px solid var(--border-color)', borderRadius: 8, padding: '10px 14px' }}>
+      <div style={{ background: 'rgba(7, 9, 15, 0.95)', border: '1px solid var(--border-color)', borderRadius: 8, padding: '10px 14px' }}>
         <p style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 4 }}>{label}</p>
         {payload.map((p, i) => (
           <p key={i} style={{ color: p.color || '#fff', fontSize: 14, fontWeight: 600 }}>
@@ -125,10 +125,10 @@ export default function RevenueAnalyticsPage() {
   const totalRevenueNum = useMemo(() => revenueData.reduce((s, d) => s + d.revenue, 0), [revenueData]);
 
   const statCards = [
-    { label: 'Total Revenue', value: `$${(stats.totalRevenue || totalRevenueNum).toLocaleString()}`, icon: DollarSign, color: '#22c55e' },
-    { label: 'Monthly Revenue', value: `$${stats.monthlyRevenue.toLocaleString()}`, icon: TrendingUp, color: '#E53935' },
-    { label: 'Daily Avg', value: `$${stats.dailyAvg.toLocaleString()}`, icon: Calendar, color: '#f59e0b' },
-    { label: 'Growth Rate', value: `${stats.growthRate >= 0 ? '+' : ''}${stats.growthRate}%`, icon: ArrowUpRight, color: stats.growthRate >= 0 ? '#22c55e' : '#FF4757' },
+    { label: 'Total Revenue', value: `$${(stats.totalRevenue || totalRevenueNum).toLocaleString()}`, icon: DollarSign, color: '#00d26a' },
+    { label: 'Monthly Revenue', value: `$${stats.monthlyRevenue.toLocaleString()}`, icon: TrendingUp, color: '#ff3d57' },
+    { label: 'Daily Avg', value: `$${stats.dailyAvg.toLocaleString()}`, icon: Calendar, color: '#f5b400' },
+    { label: 'Growth Rate', value: `${stats.growthRate >= 0 ? '+' : ''}${stats.growthRate}%`, icon: ArrowUpRight, color: stats.growthRate >= 0 ? '#00d26a' : '#ff3d57' },
   ];
 
   if (loading) {
@@ -183,15 +183,15 @@ export default function RevenueAnalyticsPage() {
             <AreaChart data={revenueData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#22c55e" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#00d26a" stopOpacity={0.4} />
+                  <stop offset="95%" stopColor="#00d26a" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(192, 199, 209, 0.08)" />
               <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#7A8599', fontSize: 11 }} interval={4} />
               <YAxis axisLine={false} tickLine={false} tick={{ fill: '#7A8599', fontSize: 11 }} tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`} />
               <Tooltip content={<ChartTooltip />} />
-              <Area type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2} fill="url(#revGrad)" />
+              <Area type="monotone" dataKey="revenue" stroke="#00d26a" strokeWidth={2} fill="url(#revGrad)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>

@@ -28,7 +28,7 @@ interface LogEntry {
 function actionColor(action: string): string {
   const a = action.toUpperCase();
   if (a.includes('CREATE') || a.includes('ADD')) return 'var(--accent-green)';
-  if (a.includes('UPDATE') || a.includes('EDIT') || a.includes('MODIFY')) return 'var(--accent-blue)';
+  if (a.includes('UPDATE') || a.includes('EDIT') || a.includes('MODIFY')) return 'var(--accent-cyan)';
   if (a.includes('DELETE') || a.includes('REMOVE')) return 'var(--accent-red)';
   if (a.includes('LOGIN') || a.includes('AUTH')) return 'var(--accent-amber)';
   return 'var(--text-secondary)';

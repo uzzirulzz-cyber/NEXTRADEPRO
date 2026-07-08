@@ -322,7 +322,7 @@ function Navbar() {
             Login
           </button>
           <button
-            onClick={() => navigate(Pages.LOGIN)}
+            onClick={() => navigate(Pages.REGISTER)}
             style={{
               background: T.gradient,
               border: 'none',
@@ -455,7 +455,7 @@ function Navbar() {
               Login
             </button>
             <button
-              onClick={() => navigate(Pages.LOGIN)}
+              onClick={() => navigate(Pages.REGISTER)}
               style={{
                 flex: 1,
                 background: T.gradient,
@@ -596,7 +596,7 @@ function HeroSection() {
           style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}
         >
           <button
-            onClick={() => navigate(Pages.LOGIN)}
+            onClick={() => navigate(Pages.TRADING)}
             style={{
               background: T.gradient,
               border: 'none',

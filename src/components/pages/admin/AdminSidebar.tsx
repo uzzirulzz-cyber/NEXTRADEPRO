@@ -69,7 +69,7 @@ export default function AdminSidebar() {
               <span className="text-sm font-bold text-blue-400">◆</span>
             </div>
             <span className="text-base font-bold text-white tracking-tight">
-              NexTrade <span className="text-blue-400">Admin</span>
+              Brock Exchange <span className="text-blue-400">Admin</span>
             </span>
           </div>
           <button

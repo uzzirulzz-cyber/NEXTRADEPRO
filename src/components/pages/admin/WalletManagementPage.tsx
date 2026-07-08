@@ -111,9 +111,9 @@ export default function WalletManagementPage() {
   }
 
   const statCards = [
-    { label: 'Total Wallets', value: stats.totalWallets.toLocaleString(), icon: Wallet, color: '#E53935' },
-    { label: 'Total Equity', value: `$${stats.totalEquity.toLocaleString()}`, icon: DollarSign, color: '#22c55e' },
-    { label: 'Frozen Assets', value: `$${stats.frozenAssets.toLocaleString()}`, icon: Snowflake, color: '#f59e0b' },
+    { label: 'Total Wallets', value: stats.totalWallets.toLocaleString(), icon: Wallet, color: '#ff3d57' },
+    { label: 'Total Equity', value: `$${stats.totalEquity.toLocaleString()}`, icon: DollarSign, color: '#00d26a' },
+    { label: 'Frozen Assets', value: `$${stats.frozenAssets.toLocaleString()}`, icon: Snowflake, color: '#f5b400' },
     { label: 'Active Wallets', value: stats.activeWallets.toLocaleString(), icon: CheckCircle, color: '#8b5cf6' },
   ];
 

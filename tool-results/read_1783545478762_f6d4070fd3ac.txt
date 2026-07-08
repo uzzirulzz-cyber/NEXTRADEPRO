@@ -1,0 +1,1574 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import React, { useState, useEffect, useRef } from 'react';
+     4→     4→import { motion } from 'framer-motion';
+     5→     5→import { useStore, Pages } from '@/store/useStore';
+     6→     6→import Image from 'next/image';
+     7→     7→import {
+     8→     8→  Shield,
+     9→     9→  Zap,
+    10→    10→  BarChart3,
+    11→    11→  HeadphonesIcon,
+    12→    12→  ArrowRight,
+    13→    13→  ChevronRight,
+    14→    14→  TrendingUp,
+    15→    15→  Users,
+    16→    16→  Clock,
+    17→    17→} from 'lucide-react';
+    18→    18→
+    19→    19→/* ═══════════════════════════════════════════════════════════════
+    20→    20→   Brock Exchange Theme — Black / Gold / Neon Cyan
+    21→    21→   ═══════════════════════════════════════════════════════════════ */
+    22→    22→const T = {
+    23→    23→  bgDarkest: '#07090f',
+    24→    24→  bgSecondary: '#10141d',
+    25→    25→  bgCard: '#171c28',
+    26→    26→  gold: '#f5b400',
+    27→    27→  goldHover: '#ffd54f',
+    28→    28→  cyan: '#00e5ff',
+    29→    29→  green: '#00d26a',
+    30→    30→  red: '#ff3d57',
+    31→    31→  text: '#ffffff',
+    32→    32→  textSec: '#b9c2d0',
+    33→    33→  textMuted: '#6b7a8d',
+    34→    34→  border: '#2a3042',
+    35→    35→  gradient: 'linear-gradient(135deg, #f5b400, #00e5ff)',
+    36→    36→  glowGold: '0 0 20px rgba(245, 180, 0, 0.35)',
+    37→    37→  glowCyan: '0 0 20px rgba(0, 229, 255, 0.30)',
+    38→    38→  radius: '18px',
+    39→    39→  shadow: '0 10px 40px rgba(0,0,0,.45)',
+    40→    40→};
+    41→    41→
+    42→    42→/* ═══════════════════════════════════════════════════════════════
+    43→    43→   Crypto Data
+    44→    44→   ═══════════════════════════════════════════════════════════════ */
+    45→    45→interface Coin {
+    46→    46→  symbol: string;
+    47→    47→  name: string;
+    48→    48→  price: string;
+    49→    49→  change: number;
+    50→    50→  color: string;
+    51→    51→  letter: string;
+    52→    52→}
+    53→    53→
+    54→    54→const coins: Coin[] = [
+    55→    55→  { symbol: 'BTC', name: 'Bitcoin', price: '$67,432.18', change: 2.34, color: '#f7931a', letter: '₿' },
+    56→    56→  { symbol: 'ETH', name: 'Ethereum', price: '$3,521.45', change: 1.87, color: '#627eea', letter: 'Ξ' },
+    57→    57→  { symbol: 'BNB', name: 'BNB', price: '$612.30', change: -0.92, color: '#f3ba2f', letter: 'B' },
+    58→    58→  { symbol: 'SOL', name: 'Solana', price: '$178.65', change: 5.21, color: '#00ffa3', letter: 'S' },
+    59→    59→  { symbol: 'XRP', name: 'XRP', price: '$0.6234', change: -1.45, color: '#00aae4', letter: 'X' },
+    60→    60→  { symbol: 'ADA', name: 'Cardano', price: '$0.4812', change: 3.67, color: '#0033ad', letter: 'A' },
+    61→    61→  { symbol: 'DOGE', name: 'Dogecoin', price: '$0.1589', change: -2.13, color: '#c2a633', letter: 'D' },
+    62→    62→  { symbol: 'DOT', name: 'Polkadot', price: '$7.34', change: 1.02, color: '#e6007a', letter: 'P' },
+    63→    63→];
+    64→    64→
+    65→    65→const tickerCoins = [
+    66→    66→  { symbol: 'BTC', price: '$67,432.18', change: 2.34 },
+    67→    67→  { symbol: 'ETH', price: '$3,521.45', change: 1.87 },
+    68→    68→  { symbol: 'BNB', price: '$612.30', change: -0.92 },
+    69→    69→  { symbol: 'SOL', price: '$178.65', change: 5.21 },
+    70→    70→  { symbol: 'XRP', price: '$0.6234', change: -1.45 },
+    71→    71→  { symbol: 'ADA', price: '$0.4812', change: 3.67 },
+    72→    72→  { symbol: 'DOGE', price: '$0.1589', change: -2.13 },
+    73→    73→  { symbol: 'DOT', price: '$7.34', change: 1.02 },
+    74→    74→  { symbol: 'AVAX', price: '$38.72', change: 4.15 },
+    75→    75→  { symbol: 'MATIC', price: '$0.7123', change: -0.34 },
+    76→    76→  { symbol: 'LINK', price: '$18.45', change: 2.89 },
+    77→    77→  { symbol: 'UNI', price: '$12.67', change: -1.78 },
+    78→    78→];
+    79→    79→
+    80→    80→const features = [
+    81→    81→  {
+    82→    82→    icon: Shield,
+    83→    83→    title: 'Bank-Grade Security',
+    84→    84→    desc: 'Multi-layer encryption, cold storage for 95% of assets, and real-time threat monitoring keep your funds safe 24/7.',
+    85→    85→  },
+    86→    86→  {
+    87→    87→    icon: Zap,
+    88→    88→    title: 'Lightning Execution',
+    89→    89→    desc: 'Our matching engine processes 1.4 million orders per second with sub-millisecond latency for instant fills.',
+    90→    90→  },
+    91→    91→  {
+    92→    92→    icon: BarChart3,
+    93→    93→    title: 'Advanced Analytics',
+    94→    94→    desc: 'Professional charting tools, real-time market data, and AI-powered insights to help you make informed decisions.',
+    95→    95→  },
+    96→    96→  {
+    97→    97→    icon: HeadphonesIcon,
+    98→    98→    title: '24/7 Expert Support',
+    99→    99→    desc: 'Dedicated support team available around the clock via live chat, email, and phone to assist you anytime.',
+   100→   100→  },
+   101→   101→];
+   102→   102→
+   103→   103→const steps = [
+   104→   104→  {
+   105→   105→    num: '01',
+   106→   106→    title: 'Create Account',
+   107→   107→    desc: 'Sign up in under 2 minutes with just your email. Complete identity verification for full access.',
+   108→   108→  },
+   109→   109→  {
+   110→   110→    num: '02',
+   111→   111→    title: 'Fund Your Wallet',
+   112→   112→    desc: 'Deposit via bank transfer, credit card, or crypto. Multiple currencies and zero-fee deposits supported.',
+   113→   113→  },
+   114→   114→  {
+   115→   115→    num: '03',
+   116→   116→    title: 'Start Trading',
+   117→   117→    desc: 'Access 200+ trading pairs with spot and futures markets. Execute trades with one click.',
+   118→   118→  },
+   119→   119→];
+   120→   120→
+   121→   121→const footerColumns = [
+   122→   122→  {
+   123→   123→    title: 'About',
+   124→   124→    links: ['About Us', 'Careers', 'Blog', 'Press'],
+   125→   125→  },
+   126→   126→  {
+   127→   127→    title: 'Products',
+   128→   128→    links: ['Spot Trading', 'Futures', 'Staking', 'NFTs'],
+   129→   129→  },
+   130→   130→  {
+   131→   131→    title: 'Support',
+   132→   132→    links: ['Help Center', 'API Docs', 'Status', 'Contact Us'],
+   133→   133→  },
+   134→   134→  {
+   135→   135→    title: 'Legal',
+   136→   136→    links: ['Privacy Policy', 'Terms of Service', 'Compliance', 'Licenses'],
+   137→   137→  },
+   138→   138→];
+   139→   139→
+   140→   140→const socialLinks = ['Twitter', 'Telegram', 'Discord', 'GitHub', 'Reddit'];
+   141→   141→
+   142→   142→/* ═══════════════════════════════════════════════════════════════
+   143→   143→   Animation Variants
+   144→   144→   ═══════════════════════════════════════════════════════════════ */
+   145→   145→const fadeUp = {
+   146→   146→  hidden: { opacity: 0, y: 30 },
+   147→   147→  visible: (i: number) => ({
+   148→   148→    opacity: 1,
+   149→   149→    y: 0,
+   150→   150→    transition: { delay: i * 0.1, duration: 0.6, ease: 'easeOut' },
+   151→   151→  }),
+   152→   152→};
+   153→   153→
+   154→   154→
+   155→   155→
+   156→   156→const scaleIn = {
+   157→   157→  hidden: { opacity: 0, scale: 0.9 },
+   158→   158→  visible: (i: number) => ({
+   159→   159→    opacity: 1,
+   160→   160→    scale: 1,
+   161→   161→    transition: { delay: i * 0.08, duration: 0.5, ease: 'easeOut' },
+   162→   162→  }),
+   163→   163→};
+   164→   164→
+   165→   165→/* ═══════════════════════════════════════════════════════════════
+   166→   166→   Section Wrapper
+   167→   167→   ═══════════════════════════════════════════════════════════════ */
+   168→   168→function Section({
+   169→   169→  id,
+   170→   170→  children,
+   171→   171→  style,
+   172→   172→  className = '',
+   173→   173→}: {
+   174→   174→  id?: string;
+   175→   175→  children: React.ReactNode;
+   176→   176→  style?: React.CSSProperties;
+   177→   177→  className?: string;
+   178→   178→}) {
+   179→   179→  return (
+   180→   180→    <section
+   181→   181→      id={id}
+   182→   182→      style={{ width: '100%', ...style }}
+   183→   183→      className={className}
+   184→   184→    >
+   185→   185→      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', width: '100%' }}>
+   186→   186→        {children}
+   187→   187→      </div>
+   188→   188→    </section>
+   189→   189→  );
+   190→   190→}
+   191→   191→
+   192→   192→/* ═══════════════════════════════════════════════════════════════
+   193→   193→   Navigation Bar
+   194→   194→   ═══════════════════════════════════════════════════════════════ */
+   195→   195→function Navbar() {
+   196→   196→  const { navigate } = useStore();
+   197→   197→  const [scrolled, setScrolled] = useState(false);
+   198→   198→  const [mobileOpen, setMobileOpen] = useState(false);
+   199→   199→
+   200→   200→  useEffect(() => {
+   201→   201→    const onScroll = () => setScrolled(window.scrollY > 20);
+   202→   202→    window.addEventListener('scroll', onScroll);
+   203→   203→    return () => window.removeEventListener('scroll', onScroll);
+   204→   204→  }, []);
+   205→   205→
+   206→   206→  const scrollTo = (id: string) => {
+   207→   207→    setMobileOpen(false);
+   208→   208→    const el = document.getElementById(id);
+   209→   209→    if (el) el.scrollIntoView({ behavior: 'smooth' });
+   210→   210→  };
+   211→   211→
+   212→   212→  return (
+   213→   213→    <motion.nav
+   214→   214→      initial={{ y: -80 }}
+   215→   215→      animate={{ y: 0 }}
+   216→   216→      transition={{ duration: 0.6, ease: 'easeOut' }}
+   217→   217→      style={{
+   218→   218→        position: 'fixed',
+   219→   219→        top: 0,
+   220→   220→        left: 0,
+   221→   221→        right: 0,
+   222→   222→        zIndex: 1000,
+   223→   223→        height: 75,
+   224→   224→        display: 'flex',
+   225→   225→        alignItems: 'center',
+   226→   226→        justifyContent: 'center',
+   227→   227→        background: scrolled
+   228→   228→          ? 'rgba(12, 15, 22, 0.95)'
+   229→   229→          : 'rgba(12, 15, 22, 0.9)',
+   230→   230→        backdropFilter: 'blur(14px)',
+   231→   231→        WebkitBackdropFilter: 'blur(14px)',
+   232→   232→        borderBottom: scrolled
+   233→   233→          ? '1px solid rgba(255,255,255,0.08)'
+   234→   234→          : '1px solid rgba(255,255,255,0.04)',
+   235→   235→        transition: 'all 0.3s ease',
+   236→   236→      }}
+   237→   237→    >
+   238→   238→      <div
+   239→   239→        style={{
+   240→   240→          maxWidth: 1200,
+   241→   241→          width: '100%',
+   242→   242→          padding: '0 24px',
+   243→   243→          display: 'flex',
+   244→   244→          alignItems: 'center',
+   245→   245→          justifyContent: 'space-between',
+   246→   246→        }}
+   247→   247→      >
+   248→   248→        {/* Logo */}
+   249→   249→        <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+   250→   250→          <Image
+   251→   251→            src="/logo.png"
+   252→   252→            alt="Brock Exchange"
+   253→   253→            width={36}
+   254→   254→            height={36}
+   255→   255→            style={{ borderRadius: 8 }}
+   256→   256→          />
+   257→   257→          <span style={{ fontSize: 20, fontWeight: 700, color: T.text, letterSpacing: '-0.5px' }}>
+   258→   258→            Brock{' '}
+   259→   259→            <span style={{ color: T.gold }}>Exchange</span>
+   260→   260→          </span>
+   261→   261→        </div>
+   262→   262→
+   263→   263→        {/* Desktop Nav Links */}
+   264→   264→        <div
+   265→   265→          style={{
+   266→   266→            display: 'flex',
+   267→   267→            alignItems: 'center',
+   268→   268→            gap: 32,
+   269→   269→          }}
+   270→   270→          className="hidden md:flex"
+   271→   271→        >
+   272→   272→          {[
+   273→   273→            { label: 'Home', action: () => window.scrollTo({ top: 0, behavior: 'smooth' }) },
+   274→   274→            { label: 'Markets', action: () => scrollTo('markets') },
+   275→   275→            { label: 'Trade', action: () => scrollTo('features') },
+   276→   276→          ].map((link) => (
+   277→   277→            <button
+   278→   278→              key={link.label}
+   279→   279→              onClick={link.action}
+   280→   280→              style={{
+   281→   281→                background: 'none',
+   282→   282→                border: 'none',
+   283→   283→                color: T.textSec,
+   284→   284→                fontSize: 15,
+   285→   285→                fontWeight: 500,
+   286→   286→                cursor: 'pointer',
+   287→   287→                transition: 'color 0.2s',
+   288→   288→                padding: 0,
+   289→   289→              }}
+   290→   290→              onMouseEnter={(e) => (e.currentTarget.style.color = T.gold)}
+   291→   291→              onMouseLeave={(e) => (e.currentTarget.style.color = T.textSec)}
+   292→   292→            >
+   293→   293→              {link.label}
+   294→   294→            </button>
+   295→   295→          ))}
+   296→   296→        </div>
+   297→   297→
+   298→   298→        {/* Desktop Buttons */}
+   299→   299→        <div className="hidden md:flex" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+   300→   300→          <button
+   301→   301→            onClick={() => navigate(Pages.LOGIN)}
+   302→   302→            style={{
+   303→   303→              background: 'transparent',
+   304→   304→              border: `1px solid ${T.cyan}`,
+   305→   305→              color: T.cyan,
+   306→   306→              padding: '9px 24px',
+   307→   307→              borderRadius: 40,
+   308→   308→              fontSize: 14,
+   309→   309→              fontWeight: 600,
+   310→   310→              cursor: 'pointer',
+   311→   311→              transition: 'all 0.3s',
+   312→   312→            }}
+   313→   313→            onMouseEnter={(e) => {
+   314→   314→              e.currentTarget.style.background = 'rgba(0, 229, 255, 0.1)';
+   315→   315→              e.currentTarget.style.boxShadow = T.glowCyan;
+   316→   316→            }}
+   317→   317→            onMouseLeave={(e) => {
+   318→   318→              e.currentTarget.style.background = 'transparent';
+   319→   319→              e.currentTarget.style.boxShadow = 'none';
+   320→   320→            }}
+   321→   321→          >
+   322→   322→            Login
+   323→   323→          </button>
+   324→   324→          <button
+   325→   325→            onClick={() => navigate(Pages.LOGIN)}
+   326→   326→            style={{
+   327→   327→              background: T.gradient,
+   328→   328→              border: 'none',
+   329→   329→              color: T.bgDarkest,
+   330→   330→              padding: '9px 24px',
+   331→   331→              borderRadius: 40,
+   332→   332→              fontSize: 14,
+   333→   333→              fontWeight: 700,
+   334→   334→              cursor: 'pointer',
+   335→   335→              transition: 'all 0.3s',
+   336→   336→              boxShadow: T.glowGold,
+   337→   337→            }}
+   338→   338→            onMouseEnter={(e) => {
+   339→   339→              e.currentTarget.style.transform = 'translateY(-1px)';
+   340→   340→              e.currentTarget.style.boxShadow = '0 0 30px rgba(245, 180, 0, 0.5)';
+   341→   341→            }}
+   342→   342→            onMouseLeave={(e) => {
+   343→   343→              e.currentTarget.style.transform = 'translateY(0)';
+   344→   344→              e.currentTarget.style.boxShadow = T.glowGold;
+   345→   345→            }}
+   346→   346→          >
+   347→   347→            Get Started
+   348→   348→          </button>
+   349→   349→        </div>
+   350→   350→
+   351→   351→        {/* Mobile Hamburger */}
+   352→   352→        <button
+   353→   353→          onClick={() => setMobileOpen(!mobileOpen)}
+   354→   354→          className="md:hidden"
+   355→   355→          style={{
+   356→   356→            background: 'none',
+   357→   357→            border: 'none',
+   358→   358→            cursor: 'pointer',
+   359→   359→            padding: 8,
+   360→   360→            display: 'flex',
+   361→   361→            flexDirection: 'column',
+   362→   362→            gap: 5,
+   363→   363→          }}
+   364→   364→          aria-label="Toggle menu"
+   365→   365→        >
+   366→   366→          <span
+   367→   367→            style={{
+   368→   368→              width: 22,
+   369→   369→              height: 2,
+   370→   370→              background: T.text,
+   371→   371→              borderRadius: 2,
+   372→   372→              transition: 'all 0.3s',
+   373→   373→              transform: mobileOpen ? 'rotate(45deg) translateY(7px)' : 'none',
+   374→   374→            }}
+   375→   375→          />
+   376→   376→          <span
+   377→   377→            style={{
+   378→   378→              width: 22,
+   379→   379→              height: 2,
+   380→   380→              background: T.text,
+   381→   381→              borderRadius: 2,
+   382→   382→              transition: 'all 0.3s',
+   383→   383→              opacity: mobileOpen ? 0 : 1,
+   384→   384→            }}
+   385→   385→          />
+   386→   386→          <span
+   387→   387→            style={{
+   388→   388→              width: 22,
+   389→   389→              height: 2,
+   390→   390→              background: T.text,
+   391→   391→              borderRadius: 2,
+   392→   392→              transition: 'all 0.3s',
+   393→   393→              transform: mobileOpen ? 'rotate(-45deg) translateY(-7px)' : 'none',
+   394→   394→            }}
+   395→   395→          />
+   396→   396→        </button>
+   397→   397→      </div>
+   398→   398→
+   399→   399→      {/* Mobile Menu */}
+   400→   400→      {mobileOpen && (
+   401→   401→        <motion.div
+   402→   402→          initial={{ opacity: 0, y: -10 }}
+   403→   403→          animate={{ opacity: 1, y: 0 }}
+   404→   404→          style={{
+   405→   405→            position: 'absolute',
+   406→   406→            top: 75,
+   407→   407→            left: 0,
+   408→   408→            right: 0,
+   409→   409→            background: 'rgba(12, 15, 22, 0.98)',
+   410→   410→            backdropFilter: 'blur(14px)',
+   411→   411→            borderBottom: `1px solid ${T.border}`,
+   412→   412→            padding: '20px 24px',
+   413→   413→            display: 'flex',
+   414→   414→            flexDirection: 'column',
+   415→   415→            gap: 16,
+   416→   416→          }}
+   417→   417→        >
+   418→   418→          {[
+   419→   419→            { label: 'Home', action: () => { window.scrollTo({ top: 0, behavior: 'smooth' }); setMobileOpen(false); } },
+   420→   420→            { label: 'Markets', action: () => scrollTo('markets') },
+   421→   421→            { label: 'Trade', action: () => scrollTo('features') },
+   422→   422→          ].map((link) => (
+   423→   423→            <button
+   424→   424→              key={link.label}
+   425→   425→              onClick={link.action}
+   426→   426→              style={{
+   427→   427→                background: 'none',
+   428→   428→                border: 'none',
+   429→   429→                color: T.textSec,
+   430→   430→                fontSize: 16,
+   431→   431→                fontWeight: 500,
+   432→   432→                cursor: 'pointer',
+   433→   433→                textAlign: 'left',
+   434→   434→                padding: '8px 0',
+   435→   435→              }}
+   436→   436→            >
+   437→   437→              {link.label}
+   438→   438→            </button>
+   439→   439→          ))}
+   440→   440→          <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+   441→   441→            <button
+   442→   442→              onClick={() => navigate(Pages.LOGIN)}
+   443→   443→              style={{
+   444→   444→                flex: 1,
+   445→   445→                background: 'transparent',
+   446→   446→                border: `1px solid ${T.cyan}`,
+   447→   447→                color: T.cyan,
+   448→   448→                padding: '12px 20px',
+   449→   449→                borderRadius: 40,
+   450→   450→                fontSize: 14,
+   451→   451→                fontWeight: 600,
+   452→   452→                cursor: 'pointer',
+   453→   453→              }}
+   454→   454→            >
+   455→   455→              Login
+   456→   456→            </button>
+   457→   457→            <button
+   458→   458→              onClick={() => navigate(Pages.LOGIN)}
+   459→   459→              style={{
+   460→   460→                flex: 1,
+   461→   461→                background: T.gradient,
+   462→   462→                border: 'none',
+   463→   463→                color: T.bgDarkest,
+   464→   464→                padding: '12px 20px',
+   465→   465→                borderRadius: 40,
+   466→   466→                fontSize: 14,
+   467→   467→                fontWeight: 700,
+   468→   468→                cursor: 'pointer',
+   469→   469→              }}
+   470→   470→            >
+   471→   471→              Get Started
+   472→   472→            </button>
+   473→   473→          </div>
+   474→   474→        </motion.div>
+   475→   475→      )}
+   476→   476→    </motion.nav>
+   477→   477→  );
+   478→   478→}
+   479→   479→
+   480→   480→/* ═══════════════════════════════════════════════════════════════
+   481→   481→   Hero Section
+   482→   482→   ═══════════════════════════════════════════════════════════════ */
+   483→   483→function HeroSection() {
+   484→   484→  const { navigate } = useStore();
+   485→   485→
+   486→   486→  const scrollToMarkets = () => {
+   487→   487→    const el = document.getElementById('markets');
+   488→   488→    if (el) el.scrollIntoView({ behavior: 'smooth' });
+   489→   489→  };
+   490→   490→
+   491→   491→  return (
+   492→   492→    <section
+   493→   493→      style={{
+   494→   494→        minHeight: '100vh',
+   495→   495→        display: 'flex',
+   496→   496→        flexDirection: 'column',
+   497→   497→        alignItems: 'center',
+   498→   498→        justifyContent: 'center',
+   499→   499→        background: 'radial-gradient(circle at top, #1b2238 0%, #07090f 70%)',
+   500→   500→        paddingTop: 75,
+   501→   501→        position: 'relative',
+   502→   502→        overflow: 'hidden',
+   503→   503→      }}
+   504→   504→    >
+   505→   505→      {/* Background glow effects */}
+   506→   506→      <div
+   507→   507→        style={{
+   508→   508→          position: 'absolute',
+   509→   509→          top: '10%',
+   510→   510→          left: '50%',
+   511→   511→          transform: 'translateX(-50%)',
+   512→   512→          width: 700,
+   513→   513→          height: 700,
+   514→   514→          background: 'radial-gradient(circle, rgba(245,180,0,0.06) 0%, transparent 70%)',
+   515→   515→          pointerEvents: 'none',
+   516→   516→        }}
+   517→   517→      />
+   518→   518→      <div
+   519→   519→        style={{
+   520→   520→          position: 'absolute',
+   521→   521→          top: '30%',
+   522→   522→          right: '10%',
+   523→   523→          width: 400,
+   524→   524→          height: 400,
+   525→   525→          background: 'radial-gradient(circle, rgba(0,229,255,0.04) 0%, transparent 70%)',
+   526→   526→          pointerEvents: 'none',
+   527→   527→        }}
+   528→   528→      />
+   529→   529→
+   530→   530→      <div style={{ maxWidth: 1200, padding: '0 24px', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+   531→   531→        {/* Badge */}
+   532→   532→        <motion.div
+   533→   533→          initial={{ opacity: 0, y: 20 }}
+   534→   534→          animate={{ opacity: 1, y: 0 }}
+   535→   535→          transition={{ duration: 0.5 }}
+   536→   536→          style={{
+   537→   537→            display: 'inline-flex',
+   538→   538→            alignItems: 'center',
+   539→   539→            gap: 8,
+   540→   540→            padding: '8px 20px',
+   541→   541→            borderRadius: 40,
+   542→   542→            background: 'rgba(245, 180, 0, 0.1)',
+   543→   543→            border: '1px solid rgba(245, 180, 0, 0.25)',
+   544→   544→            marginBottom: 28,
+   545→   545→          }}
+   546→   546→        >
+   547→   547→          <span style={{ width: 8, height: 8, borderRadius: '50%', background: T.gold, display: 'inline-block' }} />
+   548→   548→          <span style={{ color: T.gold, fontSize: 13, fontWeight: 600, letterSpacing: '0.5px' }}>
+   549→   549→            TRUSTED BY 150K+ TRADERS WORLDWIDE
+   550→   550→          </span>
+   551→   551→        </motion.div>
+   552→   552→
+   553→   553→        {/* Heading */}
+   554→   554→        <motion.h1
+   555→   555→          initial={{ opacity: 0, y: 30 }}
+   556→   556→          animate={{ opacity: 1, y: 0 }}
+   557→   557→          transition={{ duration: 0.7, delay: 0.1 }}
+   558→   558→          style={{
+   559→   559→            fontSize: 'clamp(36px, 6vw, 60px)',
+   560→   560→            fontWeight: 800,
+   561→   561→            color: T.text,
+   562→   562→            lineHeight: 1.1,
+   563→   563→            marginBottom: 24,
+   564→   564→            letterSpacing: '-1px',
+   565→   565→          }}
+   566→   566→        >
+   567→   567→          Trade Crypto with{' '}
+   568→   568→          <span style={{ background: T.gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+   569→   569→            Confidence
+   570→   570→          </span>
+   571→   571→        </motion.h1>
+   572→   572→
+   573→   573→        {/* Subtitle */}
+   574→   574→        <motion.p
+   575→   575→          initial={{ opacity: 0, y: 30 }}
+   576→   576→          animate={{ opacity: 1, y: 0 }}
+   577→   577→          transition={{ duration: 0.7, delay: 0.2 }}
+   578→   578→          style={{
+   579→   579→            fontSize: 'clamp(16px, 2vw, 19px)',
+   580→   580→            color: T.textSec,
+   581→   581→            maxWidth: 660,
+   582→   582→            margin: '0 auto 40px',
+   583→   583→            lineHeight: 1.7,
+   584→   584→            fontWeight: 400,
+   585→   585→          }}
+   586→   586→        >
+   587→   587→          Brock Exchange offers institutional-grade trading with lightning-fast execution,
+   588→   588→          deep liquidity, and 24/7 support.
+   589→   589→        </motion.p>
+   590→   590→
+   591→   591→        {/* CTA Buttons */}
+   592→   592→        <motion.div
+   593→   593→          initial={{ opacity: 0, y: 30 }}
+   594→   594→          animate={{ opacity: 1, y: 0 }}
+   595→   595→          transition={{ duration: 0.7, delay: 0.3 }}
+   596→   596→          style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}
+   597→   597→        >
+   598→   598→          <button
+   599→   599→            onClick={() => navigate(Pages.LOGIN)}
+   600→   600→            style={{
+   601→   601→              background: T.gradient,
+   602→   602→              border: 'none',
+   603→   603→              color: T.bgDarkest,
+   604→   604→              padding: '16px 40px',
+   605→   605→              borderRadius: 40,
+   606→   606→              fontSize: 16,
+   607→   607→              fontWeight: 700,
+   608→   608→              cursor: 'pointer',
+   609→   609→              transition: 'all 0.3s',
+   610→   610→              boxShadow: T.glowGold,
+   611→   611→              display: 'flex',
+   612→   612→              alignItems: 'center',
+   613→   613→              gap: 8,
+   614→   614→            }}
+   615→   615→            onMouseEnter={(e) => {
+   616→   616→              e.currentTarget.style.transform = 'translateY(-2px)';
+   617→   617→              e.currentTarget.style.boxShadow = '0 0 35px rgba(245, 180, 0, 0.5)';
+   618→   618→            }}
+   619→   619→            onMouseLeave={(e) => {
+   620→   620→              e.currentTarget.style.transform = 'translateY(0)';
+   621→   621→              e.currentTarget.style.boxShadow = T.glowGold;
+   622→   622→            }}
+   623→   623→          >
+   624→   624→            Start Trading
+   625→   625→            <ArrowRight size={18} />
+   626→   626→          </button>
+   627→   627→          <button
+   628→   628→            onClick={scrollToMarkets}
+   629→   629→            style={{
+   630→   630→              background: 'transparent',
+   631→   631→              border: `1.5px solid ${T.cyan}`,
+   632→   632→              color: T.cyan,
+   633→   633→              padding: '16px 40px',
+   634→   634→              borderRadius: 40,
+   635→   635→              fontSize: 16,
+   636→   636→              fontWeight: 600,
+   637→   637→              cursor: 'pointer',
+   638→   638→              transition: 'all 0.3s',
+   639→   639→              display: 'flex',
+   640→   640→              alignItems: 'center',
+   641→   641→              gap: 8,
+   642→   642→            }}
+   643→   643→            onMouseEnter={(e) => {
+   644→   644→              e.currentTarget.style.background = 'rgba(0, 229, 255, 0.08)';
+   645→   645→              e.currentTarget.style.boxShadow = T.glowCyan;
+   646→   646→              e.currentTarget.style.transform = 'translateY(-2px)';
+   647→   647→            }}
+   648→   648→            onMouseLeave={(e) => {
+   649→   649→              e.currentTarget.style.background = 'transparent';
+   650→   650→              e.currentTarget.style.boxShadow = 'none';
+   651→   651→              e.currentTarget.style.transform = 'translateY(0)';
+   652→   652→            }}
+   653→   653→          >
+   654→   654→            Explore Markets
+   655→   655→            <ChevronRight size={18} />
+   656→   656→          </button>
+   657→   657→        </motion.div>
+   658→   658→
+   659→   659→        {/* Stats Row */}
+   660→   660→        <motion.div
+   661→   661→          initial={{ opacity: 0, y: 30 }}
+   662→   662→          animate={{ opacity: 1, y: 0 }}
+   663→   663→          transition={{ duration: 0.7, delay: 0.5 }}
+   664→   664→          style={{
+   665→   665→            display: 'grid',
+   666→   666→            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+   667→   667→            gap: 24,
+   668→   668→            marginTop: 72,
+   669→   669→            padding: '32px 0',
+   670→   670→            borderTop: `1px solid ${T.border}`,
+   671→   671→            maxWidth: 900,
+   672→   672→            marginLeft: 'auto',
+   673→   673→            marginRight: 'auto',
+   674→   674→          }}
+   675→   675→        >
+   676→   676→          {[
+   677→   677→            { value: '$2.5B+', label: 'Trading Volume', icon: TrendingUp },
+   678→   678→            { value: '150K+', label: 'Active Traders', icon: Users },
+   679→   679→            { value: '99.99%', label: 'Uptime', icon: Clock },
+   680→   680→            { value: '24/7', label: 'Support', icon: HeadphonesIcon },
+   681→   681→          ].map((stat) => (
+   682→   682→            <div
+   683→   683→              key={stat.label}
+   684→   684→              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}
+   685→   685→            >
+   686→   686→              <stat.icon size={18} style={{ color: T.gold, marginBottom: 2 }} />
+   687→   687→              <span style={{ fontSize: 24, fontWeight: 800, color: T.text, letterSpacing: '-0.5px' }}>
+   688→   688→                {stat.value}
+   689→   689→              </span>
+   690→   690→              <span style={{ fontSize: 13, color: T.textMuted, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+   691→   691→                {stat.label}
+   692→   692→              </span>
+   693→   693→            </div>
+   694→   694→          ))}
+   695→   695→        </motion.div>
+   696→   696→      </div>
+   697→   697→
+   698→   698→      {/* Bottom fade */}
+   699→   699→      <div
+   700→   700→        style={{
+   701→   701→          position: 'absolute',
+   702→   702→          bottom: 0,
+   703→   703→          left: 0,
+   704→   704→          right: 0,
+   705→   705→          height: 120,
+   706→   706→          background: `linear-gradient(to bottom, transparent, ${T.bgDarkest})`,
+   707→   707→          pointerEvents: 'none',
+   708→   708→        }}
+   709→   709→      />
+   710→   710→    </section>
+   711→   711→  );
+   712→   712→}
+   713→   713→
+   714→   714→/* ═══════════════════════════════════════════════════════════════
+   715→   715→   Crypto Card
+   716→   716→   ═══════════════════════════════════════════════════════════════ */
+   717→   717→function CryptoCard({ coin, index }: { coin: Coin; index: number }) {
+   718→   718→  const { navigate, setSelectedCoin } = useStore();
+   719→   719→  const [hovered, setHovered] = useState(false);
+   720→   720→
+   721→   721→  const handleTrade = (e: React.MouseEvent) => {
+   722→   722→    e.stopPropagation();
+   723→   723→    setSelectedCoin(coin.symbol);
+   724→   724→    navigate(Pages.TRADING);
+   725→   725→  };
+   726→   726→
+   727→   727→  const handleCardClick = () => {
+   728→   728→    setSelectedCoin(coin.symbol);
+   729→   729→    navigate(Pages.TRADING);
+   730→   730→  };
+   731→   731→
+   732→   732→  const isPositive = coin.change >= 0;
+   733→   733→
+   734→   734→  return (
+   735→   735→    <motion.div
+   736→   736→      custom={index}
+   737→   737→      variants={scaleIn}
+   738→   738→      initial="hidden"
+   739→   739→      whileInView="visible"
+   740→   740→      viewport={{ once: true, margin: '-50px' }}
+   741→   741→      onClick={handleCardClick}
+   742→   742→      onMouseEnter={() => setHovered(true)}
+   743→   743→      onMouseLeave={() => setHovered(false)}
+   744→   744→      style={{
+   745→   745→        background: T.bgCard,
+   746→   746→        border: hovered ? `1px solid ${T.gold}` : '1px solid rgba(255,255,255,0.08)',
+   747→   747→        borderRadius: T.radius,
+   748→   748→        boxShadow: hovered ? `${T.shadow}, 0 0 20px rgba(245,180,0,0.15)` : T.shadow,
+   749→   749→        padding: 24,
+   750→   750→        cursor: 'pointer',
+   751→   751→        transition: 'all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+   752→   752→        transform: hovered ? 'translateY(-8px)' : 'translateY(0)',
+   753→   753→        position: 'relative',
+   754→   754→        overflow: 'hidden',
+   755→   755→      }}
+   756→   756→    >
+   757→   757→      {/* Subtle top gradient line */}
+   758→   758→      <div
+   759→   759→        style={{
+   760→   760→          position: 'absolute',
+   761→   761→          top: 0,
+   762→   762→          left: 0,
+   763→   763→          right: 0,
+   764→   764→          height: 2,
+   765→   765→          background: hovered ? T.gradient : 'transparent',
+   766→   766→          transition: 'background 0.3s',
+   767→   767→        }}
+   768→   768→      />
+   769→   769→
+   770→   770→      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+   771→   771→        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+   772→   772→          {/* Coin Icon */}
+   773→   773→          <div
+   774→   774→            style={{
+   775→   775→              width: 44,
+   776→   776→              height: 44,
+   777→   777→              borderRadius: '50%',
+   778→   778→              background: `${coin.color}20`,
+   779→   779→              border: `2px solid ${coin.color}40`,
+   780→   780→              display: 'flex',
+   781→   781→              alignItems: 'center',
+   782→   782→              justifyContent: 'center',
+   783→   783→              fontSize: 18,
+   784→   784→              fontWeight: 800,
+   785→   785→              color: coin.color,
+   786→   786→            }}
+   787→   787→          >
+   788→   788→            {coin.letter}
+   789→   789→          </div>
+   790→   790→          <div>
+   791→   791→            <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>{coin.name}</div>
+   792→   792→            <div style={{ fontSize: 13, color: T.textMuted, fontWeight: 500 }}>{coin.symbol}</div>
+   793→   793→          </div>
+   794→   794→        </div>
+   795→   795→      </div>
+   796→   796→
+   797→   797→      <div style={{ marginBottom: 8 }}>
+   798→   798→        <div style={{ fontSize: 26, fontWeight: 800, color: T.text, letterSpacing: '-0.5px' }}>
+   799→   799→          {coin.price}
+   800→   800→        </div>
+   801→   801→      </div>
+   802→   802→
+   803→   803→      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+   804→   804→        <div
+   805→   805→          style={{
+   806→   806→            display: 'inline-flex',
+   807→   807→            alignItems: 'center',
+   808→   808→            gap: 4,
+   809→   809→            padding: '4px 10px',
+   810→   810→            borderRadius: 8,
+   811→   811→            background: isPositive ? 'rgba(0, 210, 106, 0.12)' : 'rgba(255, 61, 87, 0.12)',
+   812→   812→          }}
+   813→   813→        >
+   814→   814→          <TrendingUp
+   815→   815→            size={13}
+   816→   816→            style={{
+   817→   817→              color: isPositive ? T.green : T.red,
+   818→   818→              transform: isPositive ? 'none' : 'rotate(180deg)',
+   819→   819→            }}
+   820→   820→          />
+   821→   821→          <span
+   822→   822→            style={{
+   823→   823→              fontSize: 13,
+   824→   824→              fontWeight: 700,
+   825→   825→              color: isPositive ? T.green : T.red,
+   826→   826→            }}
+   827→   827→          >
+   828→   828→            {isPositive ? '+' : ''}{coin.change.toFixed(2)}%
+   829→   829→          </span>
+   830→   830→        </div>
+   831→   831→
+   832→   832→        <button
+   833→   833→          onClick={handleTrade}
+   834→   834→          style={{
+   835→   835→            background: hovered ? T.gradient : 'transparent',
+   836→   836→            border: `1px solid ${hovered ? 'transparent' : T.border}`,
+   837→   837→            color: hovered ? T.bgDarkest : T.gold,
+   838→   838→            padding: '6px 16px',
+   839→   839→            borderRadius: 10,
+   840→   840→            fontSize: 13,
+   841→   841→            fontWeight: 700,
+   842→   842→            cursor: 'pointer',
+   843→   843→            transition: 'all 0.3s',
+   844→   844→          }}
+   845→   845→        >
+   846→   846→          Trade
+   847→   847→        </button>
+   848→   848→      </div>
+   849→   849→    </motion.div>
+   850→   850→  );
+   851→   851→}
+   852→   852→
+   853→   853→/* ═══════════════════════════════════════════════════════════════
+   854→   854→   Featured Cryptocurrencies Section
+   855→   855→   ═══════════════════════════════════════════════════════════════ */
+   856→   856→function FeaturedSection() {
+   857→   857→  return (
+   858→   858→    <Section
+   859→   859→      id="markets"
+   860→   860→      style={{
+   861→   861→        paddingTop: 100,
+   862→   862→        paddingBottom: 100,
+   863→   863→        background: T.bgDarkest,
+   864→   864→      }}
+   865→   865→    >
+   866→   866→      {/* Section Header */}
+   867→   867→      <motion.div
+   868→   868→        initial={{ opacity: 0, y: 30 }}
+   869→   869→        whileInView={{ opacity: 1, y: 0 }}
+   870→   870→        viewport={{ once: true }}
+   871→   871→        transition={{ duration: 0.6 }}
+   872→   872→        style={{ textAlign: 'center', marginBottom: 56 }}
+   873→   873→      >
+   874→   874→        <span
+   875→   875→          style={{
+   876→   876→            display: 'inline-block',
+   877→   877→            fontSize: 12,
+   878→   878→            fontWeight: 700,
+   879→   879→            color: T.gold,
+   880→   880→            textTransform: 'uppercase',
+   881→   881→            letterSpacing: '2px',
+   882→   882→            marginBottom: 12,
+   883→   883→          }}
+   884→   884→        >
+   885→   885→          Live Markets
+   886→   886→        </span>
+   887→   887→        <h2
+   888→   888→          style={{
+   889→   889→            fontSize: 'clamp(28px, 4vw, 42px)',
+   890→   890→            fontWeight: 800,
+   891→   891→            color: T.text,
+   892→   892→            marginBottom: 16,
+   893→   893→            letterSpacing: '-0.5px',
+   894→   894→          }}
+   895→   895→        >
+   896→   896→          Popular{' '}
+   897→   897→          <span style={{ background: T.gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+   898→   898→            Cryptocurrencies
+   899→   899→          </span>
+   900→   900→        </h2>
+   901→   901→        <p style={{ fontSize: 16, color: T.textSec, maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
+   902→   902→          Trade the most popular digital assets with the best spreads and deep liquidity.
+   903→   903→        </p>
+   904→   904→      </motion.div>
+   905→   905→
+   906→   906→      {/* Cards Grid */}
+   907→   907→      <div
+   908→   908→        style={{
+   909→   909→          display: 'grid',
+   910→   910→          gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+   911→   911→          gap: 20,
+   912→   912→        }}
+   913→   913→      >
+   914→   914→        {coins.map((coin, i) => (
+   915→   915→          <CryptoCard key={coin.symbol} coin={coin} index={i} />
+   916→   916→        ))}
+   917→   917→      </div>
+   918→   918→    </Section>
+   919→   919→  );
+   920→   920→}
+   921→   921→
+   922→   922→/* ═══════════════════════════════════════════════════════════════
+   923→   923→   Why Choose Us Section
+   924→   924→   ═══════════════════════════════════════════════════════════════ */
+   925→   925→function FeaturesSection() {
+   926→   926→  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+   927→   927→
+   928→   928→  return (
+   929→   929→    <Section
+   930→   930→      id="features"
+   931→   931→      style={{
+   932→   932→        paddingTop: 100,
+   933→   933→        paddingBottom: 100,
+   934→   934→        background: T.bgSecondary,
+   935→   935→      }}
+   936→   936→    >
+   937→   937→      <motion.div
+   938→   938→        initial={{ opacity: 0, y: 30 }}
+   939→   939→        whileInView={{ opacity: 1, y: 0 }}
+   940→   940→        viewport={{ once: true }}
+   941→   941→        transition={{ duration: 0.6 }}
+   942→   942→        style={{ textAlign: 'center', marginBottom: 56 }}
+   943→   943→      >
+   944→   944→        <span
+   945→   945→          style={{
+   946→   946→            display: 'inline-block',
+   947→   947→            fontSize: 12,
+   948→   948→            fontWeight: 700,
+   949→   949→            color: T.cyan,
+   950→   950→            textTransform: 'uppercase',
+   951→   951→            letterSpacing: '2px',
+   952→   952→            marginBottom: 12,
+   953→   953→          }}
+   954→   954→        >
+   955→   955→          Why Brock Exchange
+   956→   956→        </span>
+   957→   957→        <h2
+   958→   958→          style={{
+   959→   959→            fontSize: 'clamp(28px, 4vw, 42px)',
+   960→   960→            fontWeight: 800,
+   961→   961→            color: T.text,
+   962→   962→            marginBottom: 16,
+   963→   963→            letterSpacing: '-0.5px',
+   964→   964→          }}
+   965→   965→        >
+   966→   966→          Why Choose{' '}
+   967→   967→          <span style={{ background: T.gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+   968→   968→            Us
+   969→   969→          </span>
+   970→   970→        </h2>
+   971→   971→        <p style={{ fontSize: 16, color: T.textSec, maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
+   972→   972→          Built for traders who demand the best. Our platform combines cutting-edge technology with unmatched reliability.
+   973→   973→        </p>
+   974→   974→      </motion.div>
+   975→   975→
+   976→   976→      <div
+   977→   977→        style={{
+   978→   978→          display: 'grid',
+   979→   979→          gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+   980→   980→          gap: 20,
+   981→   981→        }}
+   982→   982→      >
+   983→   983→        {features.map((feat, idx) => {
+   984→   984→          const Icon = feat.icon;
+   985→   985→          const isHovered = hoveredIdx === idx;
+   986→   986→          return (
+   987→   987→            <motion.div
+   988→   988→              key={feat.title}
+   989→   989→              custom={idx}
+   990→   990→              variants={fadeUp}
+   991→   991→              initial="hidden"
+   992→   992→              whileInView="visible"
+   993→   993→              viewport={{ once: true, margin: '-50px' }}
+   994→   994→              onMouseEnter={() => setHoveredIdx(idx)}
+   995→   995→              onMouseLeave={() => setHoveredIdx(null)}
+   996→   996→              style={{
+   997→   997→                background: T.bgCard,
+   998→   998→                border: isHovered ? `1px solid ${T.gold}` : '1px solid rgba(255,255,255,0.08)',
+   999→   999→                borderRadius: T.radius,
+  1000→  1000→                boxShadow: isHovered ? `${T.shadow}, 0 0 20px rgba(245,180,0,0.15)` : T.shadow,
+  1001→  1001→                padding: '32px 24px',
+  1002→  1002→                textAlign: 'center',
+  1003→  1003→                transition: 'all 0.35s ease',
+  1004→  1004→                transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
+  1005→  1005→                cursor: 'default',
+  1006→  1006→              }}
+  1007→  1007→            >
+  1008→  1008→              <div
+  1009→  1009→                style={{
+  1010→  1010→                  width: 64,
+  1011→  1011→                  height: 64,
+  1012→  1012→                  borderRadius: '50%',
+  1013→  1013→                  background: T.gradient,
+  1014→  1014→                  display: 'flex',
+  1015→  1015→                  alignItems: 'center',
+  1016→  1016→                  justifyContent: 'center',
+  1017→  1017→                  margin: '0 auto 20px',
+  1018→  1018→                  boxShadow: isHovered ? T.glowGold : 'none',
+  1019→  1019→                  transition: 'box-shadow 0.3s',
+  1020→  1020→                }}
+  1021→  1021→              >
+  1022→  1022→                <Icon size={28} color={T.bgDarkest} strokeWidth={2.5} />
+  1023→  1023→              </div>
+  1024→  1024→              <h3
+  1025→  1025→                style={{
+  1026→  1026→                  fontSize: 18,
+  1027→  1027→                  fontWeight: 700,
+  1028→  1028→                  color: T.text,
+  1029→  1029→                  marginBottom: 12,
+  1030→  1030→                }}
+  1031→  1031→              >
+  1032→  1032→                {feat.title}
+  1033→  1033→              </h3>
+  1034→  1034→              <p
+  1035→  1035→                style={{
+  1036→  1036→                  fontSize: 14,
+  1037→  1037→                  color: T.textSec,
+  1038→  1038→                  lineHeight: 1.7,
+  1039→  1039→                  margin: 0,
+  1040→  1040→                }}
+  1041→  1041→              >
+  1042→  1042→                {feat.desc}
+  1043→  1043→              </p>
+  1044→  1044→            </motion.div>
+  1045→  1045→          );
+  1046→  1046→        })}
+  1047→  1047→      </div>
+  1048→  1048→    </Section>
+  1049→  1049→  );
+  1050→  1050→}
+  1051→  1051→
+  1052→  1052→/* ═══════════════════════════════════════════════════════════════
+  1053→  1053→   How It Works Section
+  1054→  1054→   ═══════════════════════════════════════════════════════════════ */
+  1055→  1055→function HowItWorksSection() {
+  1056→  1056→  const { navigate } = useStore();
+  1057→  1057→
+  1058→  1058→  return (
+  1059→  1059→    <Section
+  1060→  1060→      style={{
+  1061→  1061→        paddingTop: 100,
+  1062→  1062→        paddingBottom: 100,
+  1063→  1063→        background: T.bgDarkest,
+  1064→  1064→      }}
+  1065→  1065→    >
+  1066→  1066→      <motion.div
+  1067→  1067→        initial={{ opacity: 0, y: 30 }}
+  1068→  1068→        whileInView={{ opacity: 1, y: 0 }}
+  1069→  1069→        viewport={{ once: true }}
+  1070→  1070→        transition={{ duration: 0.6 }}
+  1071→  1071→        style={{ textAlign: 'center', marginBottom: 64 }}
+  1072→  1072→      >
+  1073→  1073→        <span
+  1074→  1074→          style={{
+  1075→  1075→            display: 'inline-block',
+  1076→  1076→            fontSize: 12,
+  1077→  1077→            fontWeight: 700,
+  1078→  1078→            color: T.gold,
+  1079→  1079→            textTransform: 'uppercase',
+  1080→  1080→            letterSpacing: '2px',
+  1081→  1081→            marginBottom: 12,
+  1082→  1082→          }}
+  1083→  1083→        >
+  1084→  1084→          Getting Started
+  1085→  1085→        </span>
+  1086→  1086→        <h2
+  1087→  1087→          style={{
+  1088→  1088→            fontSize: 'clamp(28px, 4vw, 42px)',
+  1089→  1089→            fontWeight: 800,
+  1090→  1090→            color: T.text,
+  1091→  1091→            marginBottom: 16,
+  1092→  1092→            letterSpacing: '-0.5px',
+  1093→  1093→          }}
+  1094→  1094→        >
+  1095→  1095→          How It{' '}
+  1096→  1096→          <span style={{ background: T.gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+  1097→  1097→            Works
+  1098→  1098→          </span>
+  1099→  1099→        </h2>
+  1100→  1100→        <p style={{ fontSize: 16, color: T.textSec, maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
+  1101→  1101→          Get started in minutes and begin trading on one of the world&apos;s most advanced platforms.
+  1102→  1102→        </p>
+  1103→  1103→      </motion.div>
+  1104→  1104→
+  1105→  1105→      <div
+  1106→  1106→        style={{
+  1107→  1107→          display: 'grid',
+  1108→  1108→          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+  1109→  1109→          gap: 40,
+  1110→  1110→          position: 'relative',
+  1111→  1111→        }}
+  1112→  1112→      >
+  1113→  1113→        {/* Connector lines (desktop only) */}
+  1114→  1114→        <div
+  1115→  1115→          className="hidden lg:block"
+  1116→  1116→          style={{
+  1117→  1117→            position: 'absolute',
+  1118→  1118→            top: 50,
+  1119→  1119→            left: 'calc(33.33% - 20px)',
+  1120→  1120→            right: 'calc(33.33% - 20px)',
+  1121→  1121→            height: 2,
+  1122→  1122→            background: `linear-gradient(to right, ${T.gold}40, ${T.cyan}40)`,
+  1123→  1123→            zIndex: 0,
+  1124→  1124→          }}
+  1125→  1125→        />
+  1126→  1126→
+  1127→  1127→        {steps.map((step, i) => (
+  1128→  1128→          <motion.div
+  1129→  1129→            key={step.num}
+  1130→  1130→            custom={i}
+  1131→  1131→            variants={fadeUp}
+  1132→  1132→            initial="hidden"
+  1133→  1133→            whileInView="visible"
+  1134→  1134→            viewport={{ once: true, margin: '-50px' }}
+  1135→  1135→            style={{
+  1136→  1136→              textAlign: 'center',
+  1137→  1137→              position: 'relative',
+  1138→  1138→              zIndex: 1,
+  1139→  1139→            }}
+  1140→  1140→          >
+  1141→  1141→            <div
+  1142→  1142→              style={{
+  1143→  1143→                width: 64,
+  1144→  1144→                height: 64,
+  1145→  1145→                borderRadius: '50%',
+  1146→  1146→                background: T.gradient,
+  1147→  1147→                display: 'flex',
+  1148→  1148→                alignItems: 'center',
+  1149→  1149→                justifyContent: 'center',
+  1150→  1150→                margin: '0 auto 24px',
+  1151→  1151→                boxShadow: T.glowGold,
+  1152→  1152→              }}
+  1153→  1153→            >
+  1154→  1154→              <span style={{ fontSize: 22, fontWeight: 900, color: T.bgDarkest }}>
+  1155→  1155→                {step.num}
+  1156→  1156→              </span>
+  1157→  1157→            </div>
+  1158→  1158→            <h3
+  1159→  1159→              style={{
+  1160→  1160→                fontSize: 20,
+  1161→  1161→                fontWeight: 700,
+  1162→  1162→                color: T.text,
+  1163→  1163→                marginBottom: 12,
+  1164→  1164→              }}
+  1165→  1165→            >
+  1166→  1166→              {step.title}
+  1167→  1167→            </h3>
+  1168→  1168→            <p
+  1169→  1169→              style={{
+  1170→  1170→                fontSize: 14,
+  1171→  1171→                color: T.textSec,
+  1172→  1172→                lineHeight: 1.7,
+  1173→  1173→                margin: 0,
+  1174→  1174→                maxWidth: 300,
+  1175→  1175→                marginLeft: 'auto',
+  1176→  1176→                marginRight: 'auto',
+  1177→  1177→              }}
+  1178→  1178→            >
+  1179→  1179→              {step.desc}
+  1180→  1180→            </p>
+  1181→  1181→          </motion.div>
+  1182→  1182→        ))}
+  1183→  1183→      </div>
+  1184→  1184→
+  1185→  1185→      {/* CTA under steps */}
+  1186→  1186→      <motion.div
+  1187→  1187→        initial={{ opacity: 0, y: 20 }}
+  1188→  1188→        whileInView={{ opacity: 1, y: 0 }}
+  1189→  1189→        viewport={{ once: true }}
+  1190→  1190→        transition={{ duration: 0.5, delay: 0.3 }}
+  1191→  1191→        style={{ textAlign: 'center', marginTop: 56 }}
+  1192→  1192→      >
+  1193→  1193→        <button
+  1194→  1194→          onClick={() => navigate(Pages.REGISTER)}
+  1195→  1195→          style={{
+  1196→  1196→            background: T.gradient,
+  1197→  1197→            border: 'none',
+  1198→  1198→            color: T.bgDarkest,
+  1199→  1199→            padding: '16px 40px',
+  1200→  1200→            borderRadius: 40,
+  1201→  1201→            fontSize: 16,
+  1202→  1202→            fontWeight: 700,
+  1203→  1203→            cursor: 'pointer',
+  1204→  1204→            transition: 'all 0.3s',
+  1205→  1205→            boxShadow: T.glowGold,
+  1206→  1206→            display: 'inline-flex',
+  1207→  1207→            alignItems: 'center',
+  1208→  1208→            gap: 8,
+  1209→  1209→          }}
+  1210→  1210→          onMouseEnter={(e) => {
+  1211→  1211→            e.currentTarget.style.transform = 'translateY(-2px)';
+  1212→  1212→            e.currentTarget.style.boxShadow = '0 0 35px rgba(245, 180, 0, 0.5)';
+  1213→  1213→          }}
+  1214→  1214→          onMouseLeave={(e) => {
+  1215→  1215→            e.currentTarget.style.transform = 'translateY(0)';
+  1216→  1216→            e.currentTarget.style.boxShadow = T.glowGold;
+  1217→  1217→          }}
+  1218→  1218→        >
+  1219→  1219→          Create Free Account
+  1220→  1220→          <ArrowRight size={18} />
+  1221→  1221→        </button>
+  1222→  1222→      </motion.div>
+  1223→  1223→    </Section>
+  1224→  1224→  );
+  1225→  1225→}
+  1226→  1226→
+  1227→  1227→/* ═══════════════════════════════════════════════════════════════
+  1228→  1228→   Live Market Ticker
+  1229→  1229→   ═══════════════════════════════════════════════════════════════ */
+  1230→  1230→function MarketTicker() {
+  1231→  1231→  const scrollRef = useRef<HTMLDivElement>(null);
+  1232→  1232→  const { navigate, setSelectedCoin } = useStore();
+  1233→  1233→
+  1234→  1234→  // Duplicate items for seamless loop
+  1235→  1235→  const tickerItems = [...tickerCoins, ...tickerCoins];
+  1236→  1236→
+  1237→  1237→  return (
+  1238→  1238→    <div
+  1239→  1239→      style={{
+  1240→  1240→        background: T.bgSecondary,
+  1241→  1241→        padding: '20px 0',
+  1242→  1242→        borderTop: `1px solid ${T.border}`,
+  1243→  1243→        borderBottom: `1px solid ${T.border}`,
+  1244→  1244→        overflow: 'hidden',
+  1245→  1245→      }}
+  1246→  1246→    >
+  1247→  1247→      <div
+  1248→  1248→        ref={scrollRef}
+  1249→  1249→        style={{
+  1250→  1250→          display: 'flex',
+  1251→  1251→          gap: 0,
+  1252→  1252→          animation: 'ticker-scroll 30s linear infinite',
+  1253→  1253→          width: 'max-content',
+  1254→  1254→        }}
+  1255→  1255→      >
+  1256→  1256→        {tickerItems.map((coin, i) => {
+  1257→  1257→          const isPositive = coin.change >= 0;
+  1258→  1258→          return (
+  1259→  1259→            <div
+  1260→  1260→              key={`${coin.symbol}-${i}`}
+  1261→  1261→              onClick={() => {
+  1262→  1262→                setSelectedCoin(coin.symbol);
+  1263→  1263→                navigate(Pages.TRADING);
+  1264→  1264→              }}
+  1265→  1265→              style={{
+  1266→  1266→                display: 'flex',
+  1267→  1267→                alignItems: 'center',
+  1268→  1268→                gap: 12,
+  1269→  1269→                padding: '10px 28px',
+  1270→  1270→                borderRight: `1px solid ${T.border}`,
+  1271→  1271→                cursor: 'pointer',
+  1272→  1272→                transition: 'background 0.2s',
+  1273→  1273→                whiteSpace: 'nowrap',
+  1274→  1274→                minWidth: 200,
+  1275→  1275→              }}
+  1276→  1276→              onMouseEnter={(e) => {
+  1277→  1277→                e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+  1278→  1278→              }}
+  1279→  1279→              onMouseLeave={(e) => {
+  1280→  1280→                e.currentTarget.style.background = 'transparent';
+  1281→  1281→              }}
+  1282→  1282→            >
+  1283→  1283→              <span style={{ fontSize: 14, fontWeight: 700, color: T.text }}>{coin.symbol}</span>
+  1284→  1284→              <span style={{ fontSize: 14, color: T.textSec, fontWeight: 500 }}>{coin.price}</span>
+  1285→  1285→              <span
+  1286→  1286→                style={{
+  1287→  1287→                  fontSize: 13,
+  1288→  1288→                  fontWeight: 700,
+  1289→  1289→                  color: isPositive ? T.green : T.red,
+  1290→  1290→                  background: isPositive ? 'rgba(0,210,106,0.12)' : 'rgba(255,61,87,0.12)',
+  1291→  1291→                  padding: '2px 8px',
+  1292→  1292→                  borderRadius: 6,
+  1293→  1293→                }}
+  1294→  1294→              >
+  1295→  1295→                {isPositive ? '+' : ''}{coin.change.toFixed(2)}%
+  1296→  1296→              </span>
+  1297→  1297→            </div>
+  1298→  1298→          );
+  1299→  1299→        })}
+  1300→  1300→      </div>
+  1301→  1301→
+  1302→  1302→      <style>{`
+  1303→  1303→        @keyframes ticker-scroll {
+  1304→  1304→          0% { transform: translateX(0); }
+  1305→  1305→          100% { transform: translateX(-50%); }
+  1306→  1306→        }
+  1307→  1307→      `}</style>
+  1308→  1308→    </div>
+  1309→  1309→  );
+  1310→  1310→}
+  1311→  1311→
+  1312→  1312→/* ═══════════════════════════════════════════════════════════════
+  1313→  1313→   CTA Section
+  1314→  1314→   ═══════════════════════════════════════════════════════════════ */
+  1315→  1315→function CTASection() {
+  1316→  1316→  const { navigate } = useStore();
+  1317→  1317→
+  1318→  1318→  return (
+  1319→  1319→    <Section
+  1320→  1320→      style={{
+  1321→  1321→        paddingTop: 100,
+  1322→  1322→        paddingBottom: 100,
+  1323→  1323→        background: `radial-gradient(ellipse at center, #141a2a 0%, ${T.bgDarkest} 70%)`,
+  1324→  1324→        position: 'relative',
+  1325→  1325→        overflow: 'hidden',
+  1326→  1326→      }}
+  1327→  1327→    >
+  1328→  1328→      {/* Background glow */}
+  1329→  1329→      <div
+  1330→  1330→        style={{
+  1331→  1331→          position: 'absolute',
+  1332→  1332→          top: '50%',
+  1333→  1333→          left: '50%',
+  1334→  1334→          transform: 'translate(-50%, -50%)',
+  1335→  1335→          width: 600,
+  1336→  1336→          height: 600,
+  1337→  1337→          background: 'radial-gradient(circle, rgba(245,180,0,0.05) 0%, transparent 60%)',
+  1338→  1338→          pointerEvents: 'none',
+  1339→  1339→        }}
+  1340→  1340→      />
+  1341→  1341→
+  1342→  1342→      <motion.div
+  1343→  1343→        initial={{ opacity: 0, y: 30 }}
+  1344→  1344→        whileInView={{ opacity: 1, y: 0 }}
+  1345→  1345→        viewport={{ once: true }}
+  1346→  1346→        transition={{ duration: 0.7 }}
+  1347→  1347→        style={{
+  1348→  1348→          textAlign: 'center',
+  1349→  1349→          position: 'relative',
+  1350→  1350→          zIndex: 1,
+  1351→  1351→          padding: '60px 24px',
+  1352→  1352→          background: `linear-gradient(135deg, rgba(23,28,40,0.8), rgba(16,20,29,0.9))`,
+  1353→  1353→          borderRadius: 24,
+  1354→  1354→          border: '1px solid rgba(255,255,255,0.06)',
+  1355→  1355→          boxShadow: T.shadow,
+  1356→  1356→        }}
+  1357→  1357→      >
+  1358→  1358→        <h2
+  1359→  1359→          style={{
+  1360→  1360→            fontSize: 'clamp(28px, 4vw, 40px)',
+  1361→  1361→            fontWeight: 800,
+  1362→  1362→            color: T.text,
+  1363→  1363→            marginBottom: 16,
+  1364→  1364→            letterSpacing: '-0.5px',
+  1365→  1365→          }}
+  1366→  1366→        >
+  1367→  1367→          Ready to Start{' '}
+  1368→  1368→          <span style={{ background: T.gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+  1369→  1369→            Trading?
+  1370→  1370→          </span>
+  1371→  1371→        </h2>
+  1372→  1372→        <p
+  1373→  1373→          style={{
+  1374→  1374→            fontSize: 17,
+  1375→  1375→            color: T.textSec,
+  1376→  1376→            marginBottom: 36,
+  1377→  1377→            maxWidth: 480,
+  1378→  1378→            margin: '0 auto 36px',
+  1379→  1379→            lineHeight: 1.6,
+  1380→  1380→          }}
+  1381→  1381→        >
+  1382→  1382→          Join thousands of traders on Brock Exchange and experience the future of digital asset trading.
+  1383→  1383→        </p>
+  1384→  1384→        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+  1385→  1385→          <button
+  1386→  1386→            onClick={() => navigate(Pages.REGISTER)}
+  1387→  1387→            style={{
+  1388→  1388→              background: T.gradient,
+  1389→  1389→              border: 'none',
+  1390→  1390→              color: T.bgDarkest,
+  1391→  1391→              padding: '16px 40px',
+  1392→  1392→              borderRadius: 40,
+  1393→  1393→              fontSize: 16,
+  1394→  1394→              fontWeight: 700,
+  1395→  1395→              cursor: 'pointer',
+  1396→  1396→              transition: 'all 0.3s',
+  1397→  1397→              boxShadow: T.glowGold,
+  1398→  1398→              display: 'flex',
+  1399→  1399→              alignItems: 'center',
+  1400→  1400→              gap: 8,
+  1401→  1401→            }}
+  1402→  1402→            onMouseEnter={(e) => {
+  1403→  1403→              e.currentTarget.style.transform = 'translateY(-2px)';
+  1404→  1404→              e.currentTarget.style.boxShadow = '0 0 35px rgba(245, 180, 0, 0.5)';
+  1405→  1405→            }}
+  1406→  1406→            onMouseLeave={(e) => {
+  1407→  1407→              e.currentTarget.style.transform = 'translateY(0)';
+  1408→  1408→              e.currentTarget.style.boxShadow = T.glowGold;
+  1409→  1409→            }}
+  1410→  1410→          >
+  1411→  1411→            Create Account
+  1412→  1412→            <ArrowRight size={18} />
+  1413→  1413→          </button>
+  1414→  1414→        </div>
+  1415→  1415→      </motion.div>
+  1416→  1416→    </Section>
+  1417→  1417→  );
+  1418→  1418→}
+  1419→  1419→
+  1420→  1420→/* ═══════════════════════════════════════════════════════════════
+  1421→  1421→   Footer
+  1422→  1422→   ═══════════════════════════════════════════════════════════════ */
+  1423→  1423→function Footer() {
+  1424→  1424→  return (
+  1425→  1425→    <footer
+  1426→  1426→      style={{
+  1427→  1427→        background: '#090c13',
+  1428→  1428→        borderTop: '1px solid rgba(255,255,255,0.06)',
+  1429→  1429→        paddingTop: 64,
+  1430→  1430→        paddingBottom: 32,
+  1431→  1431→      }}
+  1432→  1432→    >
+  1433→  1433→      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px' }}>
+  1434→  1434→        {/* Top section */}
+  1435→  1435→        <div
+  1436→  1436→          style={{
+  1437→  1437→            display: 'grid',
+  1438→  1438→            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+  1439→  1439→            gap: 40,
+  1440→  1440→            marginBottom: 48,
+  1441→  1441→          }}
+  1442→  1442→        >
+  1443→  1443→          {/* About column / Brand */}
+  1444→  1444→          <div style={{ gridColumn: 'span 1' }}>
+  1445→  1445→            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+  1446→  1446→              <Image
+  1447→  1447→                src="/logo.png"
+  1448→  1448→                alt="Brock Exchange"
+  1449→  1449→                width={32}
+  1450→  1450→                height={32}
+  1451→  1451→                style={{ borderRadius: 6 }}
+  1452→  1452→              />
+  1453→  1453→              <span style={{ fontSize: 18, fontWeight: 700, color: T.text }}>
+  1454→  1454→                Brock <span style={{ color: T.gold }}>Exchange</span>
+  1455→  1455→              </span>
+  1456→  1456→            </div>
+  1457→  1457→            <p style={{ fontSize: 14, color: T.textMuted, lineHeight: 1.7, margin: 0, maxWidth: 260 }}>
+  1458→  1458→              The next-generation crypto trading platform built for speed, security, and reliability.
+  1459→  1459→            </p>
+  1460→  1460→          </div>
+  1461→  1461→
+  1462→  1462→          {/* Link columns */}
+  1463→  1463→          {footerColumns.map((col) => (
+  1464→  1464→            <div key={col.title}>
+  1465→  1465→              <h4
+  1466→  1466→                style={{
+  1467→  1467→                  fontSize: 14,
+  1468→  1468→                  fontWeight: 700,
+  1469→  1469→                  color: T.text,
+  1470→  1470→                  marginBottom: 16,
+  1471→  1471→                  textTransform: 'uppercase',
+  1472→  1472→                  letterSpacing: '1px',
+  1473→  1473→                }}
+  1474→  1474→              >
+  1475→  1475→                {col.title}
+  1476→  1476→              </h4>
+  1477→  1477→              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+  1478→  1478→                {col.links.map((link) => (
+  1479→  1479→                  <a
+  1480→  1480→                    key={link}
+  1481→  1481→                    href="#"
+  1482→  1482→                    onClick={(e) => e.preventDefault()}
+  1483→  1483→                    style={{
+  1484→  1484→                      fontSize: 14,
+  1485→  1485→                      color: T.textMuted,
+  1486→  1486→                      textDecoration: 'none',
+  1487→  1487→                      transition: 'color 0.2s',
+  1488→  1488→                      lineHeight: 1.4,
+  1489→  1489→                    }}
+  1490→  1490→                    onMouseEnter={(e) => (e.currentTarget.style.color = T.gold)}
+  1491→  1491→                    onMouseLeave={(e) => (e.currentTarget.style.color = T.textMuted)}
+  1492→  1492→                  >
+  1493→  1493→                    {link}
+  1494→  1494→                  </a>
+  1495→  1495→                ))}
+  1496→  1496→              </div>
+  1497→  1497→            </div>
+  1498→  1498→          ))}
+  1499→  1499→        </div>
+  1500→  1500→
+  1501→  1501→        {/* Divider */}
+  1502→  1502→        <div
+  1503→  1503→          style={{
+  1504→  1504→            height: 1,
+  1505→  1505→            background: 'rgba(255,255,255,0.06)',
+  1506→  1506→            marginBottom: 24,
+  1507→  1507→          }}
+  1508→  1508→        />
+  1509→  1509→
+  1510→  1510→        {/* Bottom section */}
+  1511→  1511→        <div
+  1512→  1512→          style={{
+  1513→  1513→            display: 'flex',
+  1514→  1514→            alignItems: 'center',
+  1515→  1515→            justifyContent: 'space-between',
+  1516→  1516→            flexWrap: 'wrap',
+  1517→  1517→            gap: 16,
+  1518→  1518→          }}
+  1519→  1519→        >
+  1520→  1520→          <span style={{ fontSize: 13, color: T.textMuted }}>
+  1521→  1521→            © 2024 Brock Exchange. All rights reserved.
+  1522→  1522→          </span>
+  1523→  1523→          <div style={{ display: 'flex', gap: 20 }}>
+  1524→  1524→            {socialLinks.map((s) => (
+  1525→  1525→              <a
+  1526→  1526→                key={s}
+  1527→  1527→                href="#"
+  1528→  1528→                onClick={(e) => e.preventDefault()}
+  1529→  1529→                style={{
+  1530→  1530→                  fontSize: 13,
+  1531→  1531→                  color: T.textMuted,
+  1532→  1532→                  textDecoration: 'none',
+  1533→  1533→                  transition: 'color 0.2s',
+  1534→  1534→                }}
+  1535→  1535→                onMouseEnter={(e) => (e.currentTarget.style.color = T.gold)}
+  1536→  1536→                onMouseLeave={(e) => (e.currentTarget.style.color = T.textMuted)}
+  1537→  1537→              >
+  1538→  1538→                {s}
+  1539→  1539→              </a>
+  1540→  1540→            ))}
+  1541→  1541→          </div>
+  1542→  1542→        </div>
+  1543→  1543→      </div>
+  1544→  1544→    </footer>
+  1545→  1545→  );
+  1546→  1546→}
+  1547→  1547→
+  1548→  1548→/* ═══════════════════════════════════════════════════════════════
+  1549→  1549→   HomePage Component
+  1550→  1550→   ═══════════════════════════════════════════════════════════════ */
+  1551→  1551→export default function HomePage() {
+  1552→  1552→
+  1553→  1553→  useEffect(() => {
+  1554→  1554→    document.body.classList.add('landing-active');
+  1555→  1555→    document.body.style.background = T.bgDarkest;
+  1556→  1556→    return () => {
+  1557→  1557→      document.body.classList.remove('landing-active');
+  1558→  1558→      document.body.style.background = '';
+  1559→  1559→    };
+  1560→  1560→  }, []);
+  1561→  1561→
+  1562→  1562→  return (
+  1563→  1563→    <div style={{ minHeight: '100vh', background: T.bgDarkest, overflowX: 'hidden' }}>
+  1564→  1564→      <Navbar />
+  1565→  1565→      <HeroSection />
+  1566→  1566→      <MarketTicker />
+  1567→  1567→      <FeaturedSection />
+  1568→  1568→      <FeaturesSection />
+  1569→  1569→      <HowItWorksSection />
+  1570→  1570→      <CTASection />
+  1571→  1571→      <Footer />
+  1572→  1572→    </div>
+  1573→  1573→  );
+  1574→  1574→}

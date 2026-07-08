@@ -109,10 +109,10 @@ export default function TradeMonitoringPage() {
   const endIdx = Math.min(page * limit, total);
 
   const statCards = [
-    { label: 'Total Trades', value: stats.totalTrades.toLocaleString(), icon: BarChart3, color: '#E53935' },
-    { label: 'Open Positions', value: stats.openPositions.toLocaleString(), icon: Activity, color: '#22c55e' },
-    { label: "Today's Volume", value: `$${stats.todayVolume.toLocaleString()}`, icon: TrendingUp, color: '#f59e0b' },
-    { label: 'Total PnL', value: `$${stats.totalPnl.toLocaleString()}`, icon: DollarSign, color: stats.totalPnl >= 0 ? '#22c55e' : '#FF4757' },
+    { label: 'Total Trades', value: stats.totalTrades.toLocaleString(), icon: BarChart3, color: '#ff3d57' },
+    { label: 'Open Positions', value: stats.openPositions.toLocaleString(), icon: Activity, color: '#00d26a' },
+    { label: "Today's Volume", value: `$${stats.todayVolume.toLocaleString()}`, icon: TrendingUp, color: '#f5b400' },
+    { label: 'Total PnL', value: `$${stats.totalPnl.toLocaleString()}`, icon: DollarSign, color: stats.totalPnl >= 0 ? '#00d26a' : '#ff3d57' },
   ];
 
   if (loading && trades.length === 0) {

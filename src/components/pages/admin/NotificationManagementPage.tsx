@@ -112,9 +112,9 @@ export default function NotificationManagementPage() {
   }
 
   const statCards = [
-    { label: 'Total Sent', value: stats.totalSent.toLocaleString(), icon: Send, color: '#E53935' },
-    { label: 'Read Rate', value: `${stats.readRate}%`, icon: MailOpen, color: '#22c55e' },
-    { label: 'Unread Count', value: stats.unreadCount.toLocaleString(), icon: MailX, color: '#FF4757' },
+    { label: 'Total Sent', value: stats.totalSent.toLocaleString(), icon: Send, color: '#ff3d57' },
+    { label: 'Read Rate', value: `${stats.readRate}%`, icon: MailOpen, color: '#00d26a' },
+    { label: 'Unread Count', value: stats.unreadCount.toLocaleString(), icon: MailX, color: '#ff3d57' },
   ];
 
   if (loading && notifications.length === 0) {
@@ -157,7 +157,7 @@ export default function NotificationManagementPage() {
       {/* Send Notification Form */}
       <motion.div className="glass-card p-6" variants={itemVariants}>
         <h2 className="text-base font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-          <Mail size={18} style={{ color: 'var(--accent-blue)' }} />
+          <Mail size={18} style={{ color: 'var(--accent-cyan)' }} />
           Send Notification
         </h2>
         <form onSubmit={handleSend} className="space-y-4">

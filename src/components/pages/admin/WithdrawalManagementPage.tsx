@@ -212,9 +212,9 @@ export default function WithdrawalManagementPage() {
       label: 'Pending Requests',
       value: summary.pendingCount,
       icon: Clock,
-      color: '#FFD700',
-      bgColor: 'rgba(250, 204, 21, 0.08)',
-      borderColor: 'rgba(250, 204, 21, 0.2)',
+      color: '#f5b400',
+      bgColor: 'rgba(245, 180, 0, 0.08)',
+      borderColor: 'rgba(245, 180, 0, 0.2)',
     },
     {
       label: 'Pending Amount',
@@ -480,7 +480,7 @@ export default function WithdrawalManagementPage() {
                                   fontFamily: 'Inter, sans-serif',
                                   cursor: 'pointer',
                                   background: 'rgba(239, 68, 68, 0.15)',
-                                  color: '#FF4757',
+                                  color: '#ff3d57',
                                   border: '1px solid rgba(239, 68, 68, 0.3)',
                                   borderRadius: 'var(--radius-md)',
                                   transition: 'all 0.15s',
@@ -495,7 +495,7 @@ export default function WithdrawalManagementPage() {
                         ) : w.status === 'REJECTED' && w.rejectReason ? (
                           <span
                             className="text-xs flex items-center gap-1"
-                            style={{ color: '#FF4757', maxWidth: 200, wordBreak: 'break-word' }}
+                            style={{ color: '#ff3d57', maxWidth: 200, wordBreak: 'break-word' }}
                             title={w.rejectReason}
                           >
                             <AlertTriangle size={12} className="flex-shrink-0" />
@@ -523,7 +523,7 @@ export default function WithdrawalManagementPage() {
                             <div className="flex-1 min-w-[200px]">
                               <label
                                 className="block text-xs font-medium mb-1.5"
-                                style={{ color: '#FF4757' }}
+                                style={{ color: '#ff3d57' }}
                               >
                                 <AlertTriangle size={12} className="inline -mt-0.5 mr-1" />
                                 Rejection Reason (required)
